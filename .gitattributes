@@ -1,0 +1,15 @@
+# Set default behavior for all files to be text and handle line endings automatically.
+* text=auto
+
+# Force LF line endings for files that need to be run on Unix-like systems.
+*.sh        text eol=lf
+*.md        text eol=lf
+
+# You can add other text file types if your project standard is LF
+# *.py        text eol=lf
+# *.json      text eol=lf
+
+# Declare files that should be treated as binary and not have their line endings changed.
+*.png       binary
+*.jpg       binary
+*.exe       binary

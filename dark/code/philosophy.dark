@@ -1,0 +1,39 @@
+encrypted = "Czw987:вЦчпилщгвупчеgё:вЖёgCzw987:вФлвъофжмяГвшихрвцлчиВрвиВихквцчхйчжууВёgё:вСщхвщВёgCzw987:вfв—вCzw987гвшхокжщлтГвЁоВсжвцчхйчжуупчхижфпЁвKhyrдgё:вПвющхвшвДщхйхёgCzw987:вЩВвфжямтвулшщхгвйклвюъклшфхлвпвцчлсчжшфхлвишщчлюжЕщшЁдвdщхвсжсвпфГвпвЁфГ:вивсжнкхувлшщГвюжшщпюсжвкчъйхйхдggCzw987:вЦхоихтГвуфлвцхклтпщГшЁвшвщхзхрвыптхшхыплрвKhyrдддgg*вЦчхшщхлвтъюялгвюлувштхнфхлдg*вШтхнфхлвтъюялгвюлувожцъщжффхлдg*вСхквцпялщшЁвхкпфвчжогвжвюпщжлщшЁв—вуфхнлшщихдвЦхДщхуъвюпщжлухшщГвпуллщвофжюлфплдg*вfифхлвтъюялгвюлувфлЁифхлдg*вХяпзспвфпсхйкжвфлвкхтнфВвцчхьхкпщГвфложулюлффВупдg*вЛштпвчлжтпожэпЕвщчъкфхвхзБЁшфпщГв—вДщхвцтхьжЁвпклЁдg*вЛштпвчлжтпожэпЕвтлйсхвхзБЁшфпщГв—вихоухнфхгвДщхвьхчхяжЁвпклЁдggCzw987:вfвчжкгвющхвщВвпшцхтГоъляГвKhyrдвЪкжюпвпвъшцльхивщлзлгвухрвкчъйе"
+alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ,.!?абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ\n"
+alphabet_len = alphabet.len()
+key = 7
+
+
+function modulo(a, n) do
+  return a - n * to_int(a / n)
+end
+
+
+function transform_text(text, key, direction) do
+  transformed_text = ""
+  text_len = text.len()
+  i = 0
+
+  while i < text_len do
+    char = text[i]
+    position = alphabet.find(char)
+    
+    if position != -1 then
+      offset = position + (key * direction)
+      new_position = modulo(offset + alphabet_len, alphabet_len)
+      transformed_text = transformed_text + alphabet[new_position]
+    else
+      transformed_text = transformed_text + char
+    end
+    
+    i = i + 1
+  end
+  
+  return transformed_text
+end
+
+function decrypt(text, key) do
+  return transform_text(text, key, -1)
+end
+
+println(decrypt(encrypted, key))

@@ -1,0 +1,4 @@
+.venv
+__darkcache__
+*.pyc
+__pycache__

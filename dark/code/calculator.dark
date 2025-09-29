@@ -1,0 +1,113 @@
+# calculator.dark
+import "os"
+
+function print_header(title) do
+    line = "========================================"
+    println(line)
+    println("    " + title)
+    println(line)
+end
+
+function add(a, b) do
+    return a + b
+end
+
+function subtract(a, b) do
+    return a - b
+end
+
+function multiply(a, b) do
+    return a * b
+end
+
+function divide(a, b) do
+    if b == 0 then
+        println("Ошибка: Деление на ноль!")
+        return "Error"
+    end
+    return a / b
+end
+
+function get_number(prompt) do
+    while true do
+        try do
+            println(prompt)
+            input_str = input()
+            return to_float(input_str)
+        except e do
+            println("Ошибка: Введите корректное число. (" + e.message + ")")
+        end
+    end
+end
+
+function get_op_symbol(choice) do
+    if choice == "1" then return "+" end
+    if choice == "2" then return "-" end
+    if choice == "3" then return "*" end
+    if choice == "4" then return "/" end
+    return "?"
+end
+
+function run_calculator() do
+    operations = {
+        "1": { "func": add, "desc": "Сложение" },
+        "2": { "func": subtract, "desc": "Вычитание" },
+        "3": { "func": multiply, "desc": "Умножение" },
+        "4": { "func": divide, "desc": "Деление" }
+    }
+    
+    history = []
+
+    while true do
+        print_header("Калькулятор на DarkLang")
+        
+        println("Выберите операцию:")
+        for key in operations.keys() do
+            println(key + ") " + operations[key]["desc"])
+        end
+        println("5) Показать историю")
+        println("6) Выход")
+
+        choice = input()
+
+        if choice == "6" then
+            println("До свидания!")
+            os.exit()
+        end
+
+        if choice == "5" then
+            print_header("История операций")
+            if history.len() == 0 then
+                println("История пуста.")
+            else
+                for item in history do
+                    println(item)
+                end
+            end
+        else
+            try do
+                op_details = operations[choice]
+                print_header(op_details["desc"])
+                
+                num1 = get_number("Введите первое число:")
+                num2 = get_number("Введите второе число:")
+                
+                result = op_details["func"](num1, num2)
+
+                if type(result) != "str" then
+                    result_str = to_str(num1) + " " + get_op_symbol(choice) + " " + to_str(num2) + " = " + to_str(result)
+                    println("Результат: " + result_str)
+                    history.append(result_str)
+                end
+            except e do
+                println("Неверный выбор. Попробуйте снова.")
+            end
+        end
+
+        println("\nНажмите Enter для продолжения...")
+        input()
+        os.system("cls||clear")
+    end
+end
+
+run_calculator()

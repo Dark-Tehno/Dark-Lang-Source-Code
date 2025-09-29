@@ -1,0 +1,15 @@
+import "time"
+import "stdlib"
+
+history = "Привет!\nМеня зовут Владимир, мне 15 лет, и я увлечён разработкой на Python.\nВ данном случае вы видите мой язык программирования Dark.\nКакое-то время я хотел быть писателем, а какое-то — спортсменом, но в итоге, не написав ни одной книги до конца и не став спортсменом, я стал программистом.\nИ я уверен, что если человек есть, значит, у него есть и интерес, и его надо развивать.\nУдачи!"
+
+function type_writer(text, delay) do
+    chars = stdlib.str_split(text, "")
+    for char in chars do
+        print(char)
+        time.sleep(delay)
+    end
+    println("") 
+end
+
+type_writer(history, 0.01)
