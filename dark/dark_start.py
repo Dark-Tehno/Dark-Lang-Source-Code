@@ -29,7 +29,6 @@ def _translate_syntax_error_message(message: str) -> str:
     Преобразует техническое сообщение об ошибке синтаксиса в более понятное для пользователя.
     Например, "Expected RPAR, got SEMI" -> "ожидалось ')'"
     """
-    # Translations for specific tokens
     TOKEN_TRANSLATIONS = {
         'RPAR': "')'",
         'LPAR': "'('",
@@ -84,8 +83,9 @@ def check_script(file_name):
             
         with open(file_name, 'r', encoding='utf-8') as f:
             src = f.read()
+    except Exception as e:
+        print(f"Произошла непредвиденная ошибка: {e}")
 
-        # 0.3.1: Проверяем наличие директивы для интеграции с Python
         use_with_python = False
         if src.lstrip().startswith('#!USE_WITH_PYTHON'):
             use_with_python = True
@@ -128,8 +128,9 @@ def execute_dark_code(code, source_name, use_cache=True):
     ast = None
     cache_dir = "__darkcache__"
     nocache = not use_cache
-    # 0.3.1:
+    
     USE_WITH_PYTHON = False
+    USE_TKINTER = True
 
     first_line = code.split('\n', 1)[0]
     if first_line.startswith('#!'):
@@ -137,9 +138,11 @@ def execute_dark_code(code, source_name, use_cache=True):
             nocache = True
         elif first_line.startswith('#!cachedir "'):
             cache_dir = first_line.split('"')[1]
-        # 0.3.1:
         elif first_line.startswith('#!USE_WITH_PYTHON'):
             USE_WITH_PYTHON = True
+        elif first_line.startswith('#!notkinter'):
+            USE_TKINTER = False
+            
 
     is_real_file = os.path.exists(source_name)
     if not nocache and is_real_file:
@@ -171,8 +174,8 @@ def execute_dark_code(code, source_name, use_cache=True):
                 pickle.dump(ast, f)
 
     script_dir = os.path.dirname(os.path.abspath(source_name)) if is_real_file else '.'
-    # 0.3.1:
-    run(ast, script_dir=script_dir, use_with_python=USE_WITH_PYTHON)
+    
+    run(ast, source_name=source_name, script_dir=script_dir, use_with_python=USE_WITH_PYTHON, use_tkinter=USE_TKINTER)
 
 def run_script(file_name):
     """
@@ -191,8 +194,6 @@ def run_script(file_name):
     except DarkRuntimeError as e:
         e.filename = os.path.abspath(file_name)
         print(e)
-    except Exception as e:
-        print(f"Произошла непредвиденная ошибка: {e}")
 
 
 def main():

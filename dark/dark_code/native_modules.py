@@ -90,7 +90,6 @@ def native_os_system(args):
     if len(args) != 1: raise TypeError("os.system() takes 1 argument")
     command = args[0]
     if command == 'cls':
-        # Make 'cls' cross-platform
         command = 'cls' if python_os.name == 'nt' else 'clear'
         return python_os.system(command)
     return python_os.system(args[0])
@@ -307,10 +306,10 @@ def _run_internal_script(script_name):
 
     if getattr(sys, 'frozen', False):
         base_dir = python_os.path.dirname(sys.executable)
-        file_path = python_os.path.join(base_dir, "code", f"{script_name}.dark") # Используем os.path.join
+        file_path = python_os.path.join(base_dir, "code", f"{script_name}.dark")
     else:
         base_dir = python_os.path.dirname(python_os.path.abspath(__file__))
-        file_path = python_os.path.join(base_dir, '..', "code", f"{script_name}.dark") # Используем os.path.join
+        file_path = python_os.path.join(base_dir, '..', "code", f"{script_name}.dark")
 
     if not python_os.path.exists(file_path):
         raise DarkRuntimeError(f"внутренний скрипт '{script_name}.dark' не найден.")
@@ -344,7 +343,8 @@ def calculator(args):
     _run_internal_script("calculator")
 
 def version(args):
-    return "0.3.2"
+    from dark_code.__version__ import __version__
+    return __version__
 
 def docs(args):
     if args: raise TypeError("docs() takes no arguments")
@@ -420,7 +420,7 @@ def native_file_seek(args):
     file_obj.seek(offset)
     return None
 
-# 0.3.1:
+
 def native_python_exec(args, env):
     """
     Выполняет строку кода Python.
@@ -448,7 +448,6 @@ def color(args, color_name):
         text = args[0]
     else:
         text = ""
-    # color to anci
     COLOR_CODES = {
         'red': '\033[91m',
         'green': '\033[92m',
@@ -508,8 +507,6 @@ def rgba_color(args):
     if not isinstance(text, str):
         raise TypeError("Text argument must be a string")
     
-    # ANSI escape codes do not directly support alpha for foreground colors in most terminals.
-    # We'll just use the RGB color.
     return f"\033[38;2;{r};{g};{b}m" + text + "\033[0m"
 
 def hex_color(args):
@@ -642,7 +639,7 @@ NATIVE_MODULES = {
         'set_text': native_gui_set_text, 'get_text': native_gui_get_text,
         'check_events': native_gui_check_events, 'stop': native_gui_stop,
     },
-    # 0.3.1:
+    
     'color': {
         'rgb': rgb_color,
         'rgba': rgba_color,

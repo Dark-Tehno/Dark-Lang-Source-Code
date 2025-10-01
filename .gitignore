@@ -2,3 +2,8 @@
 __darkcache__
 *.pyc
 __pycache__
+*.spec
+build
+dist
+output
+*.iss

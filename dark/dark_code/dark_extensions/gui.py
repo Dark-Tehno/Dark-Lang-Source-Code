@@ -1,17 +1,13 @@
 import os
 import sys
-try:
-    import tkinter as tk
-    from tkinter import ttk
-except ModuleNotFoundError:
-    print("""Для стабильной работы на Linux(Debian, Ubuntu, Mint) необходимо выполнить `sudo apt-get install python3-tk` 
-или для Fedora, CentOS, RHEL - `sudo dnf install python3-tkinter`
-или для Arch Linux, Manjaro - `sudo pacman -S tk`""")
 import queue
 import threading
 import itertools
 import time
 from dark_code.dark_exceptions import DarkRuntimeError
+
+tk = None
+ttk = None
 
 class GuiManager:
     def __init__(self):
@@ -104,11 +100,9 @@ class GuiManager:
             if sys.platform == "win32" and os.path.exists(icon_path_ico):
                 self.root.iconbitmap(icon_path_ico)
             elif os.path.exists(icon_path_png):
-                # Для Linux/macOS используем PhotoImage, который поддерживает PNG
                 photo = tk.PhotoImage(file=icon_path_png)
                 self.root.wm_iconphoto(True, photo)
         except tk.TclError:
-            # Игнорируем ошибку, если иконка не найдена или имеет неверный формат.
             print("Warning: Could not load icon 'assets/icon.ico'.")
         self.root.withdraw() 
 
@@ -242,7 +236,31 @@ def native_gui_stop(args):
     gui_manager = None
     return None
 
-def get_module():
+def get_module(use_tkinter=True):
+    global tk, ttk
+
+    if not use_tkinter:
+        return {'error': lambda args: "Модуль gui отключен директивой #!notkinter"}
+
+    if tk is not None:
+        return {
+            'create_window': native_gui_create_window, 'create_label': native_gui_create_label,
+            'create_button': native_gui_create_button, 'create_entry': native_gui_create_entry,
+            'set_text': native_gui_set_text, 'get_text': native_gui_get_text,
+            'check_events': native_gui_check_events, 'stop': native_gui_stop,
+        }
+
+    try:
+        import tkinter
+        from tkinter import ttk as t
+        tk = tkinter
+        ttk = t
+    except ModuleNotFoundError:
+        print("""Для стабильной работы на Linux(Debian, Ubuntu, Mint) необходимо выполнить `sudo apt-get install python3-tk` 
+или для Fedora, CentOS, RHEL - `sudo dnf install python3-tkinter`
+или для Arch Linux, Manjaro - `sudo pacman -S tk`""", file=sys.stderr)
+        return {'error': lambda args: "Модуль tkinter не найден. Установите его для вашей ОС."}
+
     return {
         'create_window': native_gui_create_window, 'create_label': native_gui_create_label,
         'create_button': native_gui_create_button, 'create_entry': native_gui_create_entry,

@@ -519,6 +519,9 @@ class DarkInstance:
     def __init__(self, klass):
         self.klass = klass
         self.fields = {}
+    
+    def __str__(self):
+        return f"<instance of {self.klass.name}>"
 
 class BoundMethod:
     def __init__(self, instance, function):
@@ -536,8 +539,8 @@ class ReturnSignal(Exception):
     def __init__(self, value):
         self.value = value
 
-# 0.3.1:
-def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_with_python=False):
+
+def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=None, modules=None, use_with_python=False, use_tkinter=True):
     if env is None: env = {}
     if script_dir is None: script_dir = '.'
     if imported_files is None: imported_files = set()
@@ -563,10 +566,26 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
             'keys': (0, lambda o, a: list(o.keys())),
         }
     }
-    # 0.3.1:
+    
     if use_with_python:
         from dark_code.native_modules import native_python_exec
         modules['python'] = {'exec': lambda args: native_python_exec(args, env)}
+
+    def _dark_obj_to_str(val, current_env):
+        """Преобразует объект Dark в строку, вызывая __str__ если он есть."""
+        if isinstance(val, DarkInstance):
+            str_method = val.klass.find_method('__str__')
+            if str_method:
+                try:
+                    bound_str_method = BoundMethod(val, str_method)
+                    result = call_dark_function(bound_str_method.function, [bound_str_method.instance], self_instance=bound_str_method.instance)
+                    if not isinstance(result, str):
+                        raise DarkRuntimeError(f"Метод __str__ должен возвращать строку, а не {type(result).__name__}")
+                    return result
+                except DarkRuntimeError as e:
+                    raise e
+            return str(val) 
+        return str(val)
 
     def is_truthy(val):
         return not (val is False or val == 0 or val == "" or (isinstance(val, (list, dict)) and not val)) 
@@ -589,8 +608,11 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
         except ReturnSignal as ret:
             return ret.value
         except DarkRuntimeError as e:
-            if e.line is None:
-                e.line = call_site_line
+            context_name = f"функция '{func.name}'"
+            if self_instance:
+                context_name = f"метод '{func.name}' класса '{self_instance.klass.name}'"
+            
+            e.add_trace(func.definition_env.get('__file__', '<unknown>'), call_site_line, context_name)
             raise e
         return 0 
 
@@ -625,7 +647,7 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
             except (ValueError, TypeError): raise DarkRuntimeError(f"Cannot convert value to float")
         if t == 'to_str':
             val = eval_expr(node[1], current_env)
-            return str(val)
+            return _dark_obj_to_str(val, current_env)
         if t == 'type':
             val = eval_expr(node[1], current_env)
             if isinstance(val, int): return "int"
@@ -706,6 +728,26 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
             op, a_node, b_node, line = node[1], node[2], node[3], node[4]
             a = eval_expr(a_node, current_env)
             b = eval_expr(b_node, current_env)
+
+            if isinstance(a, DarkInstance):
+                op_to_method = {
+                    '+': '__add__',
+                    '-': '__sub__',
+                    '*': '__mul__',
+                    '/': '__div__',
+                    '<': '__lt__',
+                    '>': '__gt__',
+                    '<=': '__le__',
+                    '>=': '__ge__',
+                    '==': '__eq__',
+                    '!=': '__ne__',
+                }
+                if op in op_to_method:
+                    method_name = op_to_method[op]
+                    method = a.klass.find_method(method_name)
+                    if method:
+                        result = call_dark_function(method, [a, b], call_site_line=line, self_instance=a)
+                        return result
 
             
             if op == '==':
@@ -820,10 +862,10 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
         try:
             typ = s[0]
             if typ == 'print':
-                values = [eval_expr(arg, current_env) for arg in s[1]]
+                values = [_dark_obj_to_str(eval_expr(arg, current_env), current_env) for arg in s[1]]
                 print(*values, end='')
             elif typ == 'println':
-                values = [eval_expr(arg, current_env) for arg in s[1]]
+                values = [_dark_obj_to_str(eval_expr(arg, current_env), current_env) for arg in s[1]]
                 print(*values)
             elif typ == 'import':
                 module_name = s[1]
@@ -858,7 +900,7 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
                         py_module = __import__(module_name)
                         
                         if hasattr(py_module, 'get_module') and callable(py_module.get_module):
-                            modules[module_name] = py_module.get_module()
+                            modules[module_name] = py_module.get_module(use_tkinter=use_tkinter)
                             return
                         else:
                             raise DarkRuntimeError(f"Python extension '{module_name}' does not have a callable 'get_module' function.", line=line)
@@ -887,13 +929,15 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
                         module_dir = os.path.dirname(canonical_path)
                         module_env = {}
                         modules[module_name] = module_env
-                        # 0.3.1:
+                        module_env['__file__'] = canonical_path 
+                        
                         run(module_ast, env=module_env, script_dir=module_dir, imported_files=imported_files, modules=modules, use_with_python=use_with_python)
                     except DarkError as e:
                         raise DarkRuntimeError(f"Error in module '{module_name}' ({canonical_path}):\n{e}", line=line)
             elif typ == 'func_def':
                 name, params, body = s[1], s[2], s[3]
                 func = Function(name, params, body, dict(current_env))
+                func.definition_env['__file__'] = current_env.get('__file__', '<main>')
                 current_env[name] = func 
                 func.definition_env[name] = func 
             elif typ == 'class_def':
@@ -912,10 +956,15 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
                     func_name, params, body, _ = method_node[1], method_node[2], method_node[3], method_node[4]
                     if not params:
                         raise DarkRuntimeError(f"Method '{func_name}' must have at least one parameter for the instance.", line=method_node[4])
-                    methods[func_name] = Function(func_name, params, body, dict(current_env))
+                    method_func = Function(func_name, params, body, dict(current_env))
+                    method_func.definition_env['__file__'] = current_env.get('__file__', '<main>')
+                    methods[func_name] = method_func
 
                 new_class = DarkClass(name, base_class, methods)
                 current_env[name] = new_class
+
+                for method in methods.values():
+                    method.definition_env[name] = new_class
             elif typ == 'return':
                 val_expr = s[1]
                 return_val = 0
@@ -1028,6 +1077,8 @@ def run(ast, env=None, script_dir=None, imported_files=None, modules=None, use_w
             raise DarkRuntimeError(str(e), line=line)
 
     try:
+        if '__file__' not in env:
+            env['__file__'] = os.path.abspath(source_name)
         for st in ast[1]:
             run_stmt(st, env)
     except ReturnSignal as e:
@@ -1145,9 +1196,7 @@ class StaticAnalyzer:
         for name, info in BUILTIN_FUNCTIONS_INFO.items():
             self.define(name, {'type': 'builtin_function', **info})
 
-        # 0.3.1: Если включена интеграция с Python, делаем модуль 'python' доступным для анализатора
         if use_with_python:
-            # Мы просто сообщаем, что есть такой модуль и у него есть член 'exec'
             self.define('python', {'type': 'module', 'exports': {'exec': {'type': 'native_function'}}})
         
         for stmt in ast[1]:
