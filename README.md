@@ -78,7 +78,7 @@ type_writer(history, 0.05)
 3.  **Настройте VS Code(Windows)**, указав путь к исполняемому файлу `dark_start.exe` в `settings.json`:
     ```json
     {
-        "dark.executorPath": "C:\\Program Files (x86)\\Dark-Lang-0-3-1\\dark_start.exe"
+        "dark.executorPath": "C:\\Program Files (x86)\\Dark-Lang-0-3-3\\dark_start.exe"
     }
     ```
     (Линус версия сделает всё сама)
