@@ -20,7 +20,7 @@ try:
 except ImportError:
     pass
 
-from dark_code.dark_lang import Parser, lex, run, DarkSyntaxError, DarkRuntimeError, StaticAnalyzer
+from dark_code.dark_lang import Parser, lex, run, DarkRuntimeError, StaticAnalyzer
 
 FROZEN_SCRIPT_CONTENT = None
 
@@ -80,7 +80,7 @@ def check_script(file_name):
         if not os.path.exists(file_name):
             print(f"Ошибка: Файл не найден: {os.path.abspath(file_name)}", file=sys.stderr)
             sys.exit(1)
-            
+
         with open(file_name, 'r', encoding='utf-8') as f:
             src = f.read()
     except Exception as e:
@@ -96,7 +96,7 @@ def check_script(file_name):
             if token.type == 'ERROR':
                 print(f"Лексическая ошибка в файле {os.path.abspath(file_name)}:{token.line}:{token.col}: {token.value}", file=sys.stderr)
                 lex_errors_found = True
-                
+
         if lex_errors_found:
             sys.exit(1)
 
@@ -108,7 +108,7 @@ def check_script(file_name):
                 translated_message = _translate_syntax_error_message(e.message)
                 print(f"Синтаксическая ошибка в файле {os.path.abspath(file_name)}:{e.line}:{e.column}: {translated_message}", file=sys.stderr)
             sys.exit(1)
-        
+
         analyzer = StaticAnalyzer()
         semantic_errors = analyzer.analyze(ast, os.path.abspath(file_name), use_with_python=use_with_python)
         if semantic_errors:

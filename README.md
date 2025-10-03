@@ -10,7 +10,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/version-0.3.3-blue.svg" alt="Version">
+    <img src="https://img.shields.io/badge/version-0.3.4-blue.svg" alt="Version">
     <img src="https://img.shields.io/badge/language-Python-blue.svg" alt="Language">
     <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
   </p>
@@ -65,7 +65,7 @@ type_writer(history, 0.05)
 ## 🛠️ Установка и использование
 
 1.  **Скачайте установщик** последней версии со страницы документации.
-    *   <a href="https://vsp210.ru/static/files/Dark-Lang-setup-v0.3.3.exe" class="download-button">**Скачать установщик Dark v0.3.3(Для Windows)**</a>
+    *   <a href="https://vsp210.ru/static/files/Dark-Lang-setup-v0.3.4.exe" class="download-button">**Скачать установщик Dark v0.3.3(Для Windows)**</a>
     *   Для Linux загрузите исходный код и перейдите в папку Dark-Lang-Source-Code через терминал.
     Затем выполните:
     ```bash
@@ -78,7 +78,7 @@ type_writer(history, 0.05)
 3.  **Настройте VS Code(Windows)**, указав путь к исполняемому файлу `dark_start.exe` в `settings.json`:
     ```json
     {
-        "dark.executorPath": "C:\\Program Files (x86)\\Dark-Lang-0-3-3\\dark_start.exe"
+        "dark.executorPath": "C:\\Program Files (x86)\\Dark-Lang-0-3-4\\dark_start.exe"
     }
     ```
     (Линус версия сделает всё сама)
