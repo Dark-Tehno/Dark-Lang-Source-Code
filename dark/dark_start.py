@@ -211,7 +211,7 @@ def main():
             run_script(default_script)
             sys.exit(0)
         else:
-            print(f"Ошибка: Не указан файл для запуска или проверки({os.path.exists(default_script)}).", file=sys.stderr)
+            print(f"Ошибка: Не указан файл для запуска или проверки.", file=sys.stderr)
             sys.exit(1)
 
     mode = 'run'
@@ -224,7 +224,18 @@ def main():
         elif sys.argv[1] == '--parser':
             mode = 'parser'
             file_arg_index = 2
-
+        elif sys.argv[1] == '--version':
+            from dark_code import __version__
+            print(__version__.__version__)
+            sys.exit(0)
+        elif sys.argv[1] == '--help':
+            print("Использование: dark [опции] [файл]")
+            print("Опции:")
+            print("  --check    Проверить синтаксис и семантику файла без выполнения.")
+            print("  --parser   Вывести токены и AST (для отладки парсера).")
+            print("  --version  Показать версию Dark.")
+            print("  --help     Показать это сообщение.")
+            sys.exit(0)
         else:
             print(f"Неизвестный флаг: {sys.argv[1]}", file=sys.stderr)
             sys.exit(1)

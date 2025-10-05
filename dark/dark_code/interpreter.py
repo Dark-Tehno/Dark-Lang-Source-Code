@@ -419,18 +419,17 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                             modules[module_name] = py_module.get_module(use_tkinter=use_tkinter)
                             return
                         else:
-                            raise DarkRuntimeError(f"Python extension '{module_name}' does not have a callable 'get_module' function.", line=line)
+                            raise DarkRuntimeError(f"Расширение Python '{module_name}' не имеет вызываемой функции 'get_module'.", line=line)
                     except ImportError as e:
-                        raise DarkRuntimeError(f"Failed to import Python extension '{module_name}': {e}", line=line)
+                        raise DarkRuntimeError(f"Не удалось импортировать расширение Python '{module_name}': {e}", line=line)
                     except Exception as e:
-                        raise DarkRuntimeError(f"Error loading Python extension '{module_name}': {e}", line=line)
+                        raise DarkRuntimeError(f"Ошибка при загрузке расширения Python  '{module_name}': {e}", line=line)
 
-                
                 module_path = os.path.join(script_dir, module_name + ".dark")
                 canonical_path = os.path.abspath(module_path)
 
                 if not os.path.exists(canonical_path):
-                    raise DarkRuntimeError(f"не удалось найти модуль или Python-расширение: {module_name}", line=line)
+                    raise DarkRuntimeError(f"не удалось найти модуль или Python-расширение: '{module_name}'", line=line)
                 else:
                     if canonical_path in imported_files:
                         return
@@ -450,6 +449,37 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                         run(module_ast, env=module_env, script_dir=module_dir, imported_files=imported_files, modules=modules, use_with_python=use_with_python)
                     except DarkError as e:
                         raise DarkRuntimeError(f"Error in module '{module_name}' ({canonical_path}):\n{e}", line=line)
+            elif typ == 'from_import':
+                module_name, names, line = s[1], s[2], s[3]
+                
+                # Выполняем стандартный импорт, чтобы загрузить модуль в память.
+                # Если модуль уже был в modules — оставляем его. Если же модуль
+                # был загружен только ради `from ... use ...`, то после импорта
+                # удаляем его из `modules`, чтобы имя модуля не было доступно
+                # как переменная (т.е. `my_math` не появилось).
+                was_already_loaded = module_name in modules
+                import_stmt_node = ('import', module_name, line)
+                run_stmt(import_stmt_node, current_env)
+
+                if module_name not in modules:
+                    # Если модуль по какой-то причине не зарегистрировался — ошибка.
+                    raise DarkRuntimeError(f"Не удалось загрузить модуль '{module_name}' для импорта имен.", line=line)
+                
+                module_env = modules[module_name]
+
+                # Если модуль был загружен только сейчас в рамках `from ... use ...`,
+                # удаляем его из глобального реестра модулей, чтобы его имя
+                # не было доступно как переменная.
+                if not was_already_loaded:
+                    modules.pop(module_name, None)
+
+                # Копируем запрошенные имена в текущее окружение
+                for name_to_import in names:
+                    if name_to_import in module_env:
+                        current_env[name_to_import] = module_env[name_to_import]
+                    else:
+                        raise DarkRuntimeError(f"Имя '{name_to_import}' не найдено в модуле '{module_name}'.", line=line)
+
             elif typ == 'func_def':
                 name, params, body = s[1], s[2], s[3]
                 func = Function(name, params, body, dict(current_env))
@@ -599,4 +629,4 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
             run_stmt(st, env)
     except ReturnSignal as e:
         return e.value
-    return env
+    return None

@@ -32,7 +32,7 @@ TOKEN_SPEC = [
     ('NEWLINE', r'\n'),
 ]
 TOKEN_SPEC.append(('MISMATCH', r'.')) 
-KEYWORDS = {'print', 'println', 'if', 'then', 'end', 'while', 'do', 'input', 'to_int', 'to_str', 'type', 'else', 'import', 'true', 'false', 'function', 'return', 'for', 'in', 'to_float', 'try', 'except', 'and', 'or', 'not', 'class'}
+KEYWORDS = {'print', 'println', 'if', 'then', 'end', 'while', 'do', 'input', 'to_int', 'to_str', 'type', 'else', 'import', 'true', 'false', 'function', 'return', 'for', 'in', 'to_float', 'try', 'except', 'and', 'or', 'not', 'class', 'use', 'from'}
 master_re = re.compile('|'.join(f'(?P<{name}>{pattern})' for name,pattern in TOKEN_SPEC))
 
 def lex(text):

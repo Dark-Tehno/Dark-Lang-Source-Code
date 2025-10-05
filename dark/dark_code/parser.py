@@ -71,12 +71,28 @@ class Parser:
             self.eat('RPAR')
             if self.cur().type == 'SEMI': self.eat('SEMI')
             return ('println', args, line)
-        if tok.type == 'IMPORT':
-            self.eat('IMPORT')
+        if tok.type in ('IMPORT', 'USE'):
+            self.eat(tok.type)
             module_name_tok = self.eat('STRING')
             module_name = module_name_tok.value
             if self.cur().type == 'SEMI': self.eat('SEMI')
             return ('import', module_name, line)
+        if tok.type == 'FROM':
+            self.eat('FROM')
+            module_name_tok = self.eat('STRING')
+            module_name = module_name_tok.value
+            self.eat('USE')
+
+            names = []
+            if self.cur().type == 'ID':
+                names.append(self.eat('ID').value)
+                while self.cur().type == 'COMMA':
+                    self.eat('COMMA')
+                    if self.cur().type != 'ID': break 
+                    names.append(self.eat('ID').value)
+            
+            if self.cur().type == 'SEMI': self.eat('SEMI') # Эта строка была здесь, но не работала как надо
+            return ('from_import', module_name, names, line)
         if tok.type == 'FUNCTION':
             self.eat('FUNCTION')
             name = self.eat('ID').value
@@ -214,8 +230,9 @@ class Parser:
             else:
                 raise DarkSyntaxError("Invalid target for assignment", line=assign_tok.line, col=assign_tok.col)
         
-        if self.cur().type == 'SEMI': self.eat('SEMI')
-        return ('expr', node, line)
+        if self.cur().type == 'SEMI':
+            self.eat('SEMI')
+        return ('expr', node, line) # Возвращаем как выражение, которое будет выполнено
 
     def class_def(self):
         self.eat('CLASS')
