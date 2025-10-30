@@ -78,7 +78,18 @@ class StaticAnalyzer:
         if module_name in NATIVE_MODULES:
             return {k: {'type': 'native_function'} for k in NATIVE_MODULES[module_name]}
 
+        # Ищем модуль в разных форматах
+        # Сначала папка, потом .py, потом .dark
+        pkg_init_path = os.path.join(script_dir, module_name, '__init__.py')
+        py_file_path = os.path.join(script_dir, module_name + '.py')
         module_path = os.path.join(script_dir, module_name + ".dark")
+
+        # Статический анализатор пока будет проверять только .dark модули,
+        # т.к. анализ Python-расширений требует их выполнения, что небезопасно.
+        # Эта логика просто предотвращает ошибку "модуль не найден" для .py расширений.
+        if os.path.exists(pkg_init_path) or os.path.exists(py_file_path):
+            return {'type': 'python_extension'} # Возвращаем заглушку
+
         abs_path = os.path.abspath(module_path)
 
         if abs_path in self.analyzed_files:

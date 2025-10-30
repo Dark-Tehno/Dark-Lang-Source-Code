@@ -43,11 +43,22 @@ class ReturnSignal(Exception):
         self.value = value
 
 
-def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=None, modules=None, use_with_python=False, use_tkinter=True):
+def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=None, modules=None, use_with_python=False, use_tkinter=True, denv_path=None):
     if env is None: env = {}
     if script_dir is None: script_dir = '.'
     if imported_files is None: imported_files = set()
     if modules is None: modules = {}
+
+    # Создаем список путей для поиска модулей
+    module_search_paths = [
+        script_dir, # Поиск в директории со скриптом
+        # Другие глобальные пути можно добавить сюда
+    ]
+
+    # Если denv активно, добавляем путь к его расширениям в начало списка
+    if denv_path:
+        denv_extensions_path = os.path.join(denv_path, 'dark_extensions')
+        module_search_paths.insert(0, denv_extensions_path) # Приоритет у denv
 
     BUILTIN_METHODS = {
         str: {
@@ -393,42 +404,60 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                     return
 
                 
-                py_ext_path = None
-                search_dir = script_dir
-                while True:
-                    potential_ext_dir = os.path.join(search_dir, 'dark_extensions')
-                    potential_py_path = os.path.join(potential_ext_dir, module_name + ".py")
-                    if os.path.exists(potential_py_path):
-                        py_ext_path = potential_py_path
-                        break
-                    
-                    parent_dir = os.path.dirname(search_dir)
-                    if parent_dir == search_dir: 
-                        break
-                    search_dir = parent_dir
+                # --- Новая логика поиска модулей ---
+                py_module_info = None # Информация о найденном Python-модуле (путь и имя)
+                module_path = None # Путь к .dark модулю
 
-                if py_ext_path:
+                for path in module_search_paths:
+                    # 1. Ищем папку-расширение (my_module/__init__.py)
+                    potential_pkg_path = os.path.join(path, module_name)
+                    init_py_path = os.path.join(potential_pkg_path, '__init__.py')
+                    if os.path.isdir(potential_pkg_path) and os.path.exists(init_py_path):
+                        py_module_info = {'path': init_py_path, 'name': module_name, 'dir': path}
+                        break
+
+                    # 2. Ищем файл-расширение (my_module.py)
+                    potential_py_path = os.path.join(path, module_name + ".py")
+                    if os.path.exists(potential_py_path):
+                        py_module_info = {'path': potential_py_path, 'name': module_name, 'dir': path}
+                        break
+                
+                if py_module_info:
                     try:
-                        ext_dir = os.path.dirname(py_ext_path)
+                        # Добавляем родительскую директорию (например, dark_extensions) в sys.path,
+                        # чтобы Python мог найти пакет 'my_module'.
+                        ext_dir = py_module_info['dir']
                         if ext_dir not in sys.path:
                             sys.path.insert(0, ext_dir)
                         
-                        py_module = __import__(module_name)
+                        # Импортируем модуль по его имени
+                        py_module = __import__(py_module_info['name'])
                         
                         if hasattr(py_module, 'get_module') and callable(py_module.get_module):
                             modules[module_name] = py_module.get_module(use_tkinter=use_tkinter)
                             return
                         else:
-                            raise DarkRuntimeError(f"Расширение Python '{module_name}' не имеет вызываемой функции 'get_module'.", line=line)
+                            # Проверяем, есть ли get_module в __init__ для пакетов
+                            if os.path.isdir(os.path.join(ext_dir, module_name)):
+                                raise DarkRuntimeError(f"Расширение Python '{module_name}' (пакет) не имеет функции 'get_module' в файле __init__.py.", line=line)
+                            else:
+                                raise DarkRuntimeError(f"Расширение Python '{module_name}' (файл) не имеет вызываемой функции 'get_module'.", line=line)
                     except ImportError as e:
                         raise DarkRuntimeError(f"Не удалось импортировать расширение Python '{module_name}': {e}", line=line)
                     except Exception as e:
                         raise DarkRuntimeError(f"Ошибка при загрузке расширения Python  '{module_name}': {e}", line=line)
 
-                module_path = os.path.join(script_dir, module_name + ".dark")
+                # Если не нашли .py, ищем .dark модуль
+                if not py_module_info:
+                    for path in module_search_paths:
+                        potential_dark_path = os.path.join(path, module_name + ".dark")
+                        if os.path.exists(potential_dark_path):
+                            module_path = potential_dark_path
+                            break
+
                 canonical_path = os.path.abspath(module_path)
 
-                if not os.path.exists(canonical_path):
+                if not canonical_path:
                     raise DarkRuntimeError(f"не удалось найти модуль или Python-расширение: '{module_name}'", line=line)
                 else:
                     if canonical_path in imported_files:
@@ -446,34 +475,24 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                         modules[module_name] = module_env
                         module_env['__file__'] = canonical_path 
                         
-                        run(module_ast, env=module_env, script_dir=module_dir, imported_files=imported_files, modules=modules, use_with_python=use_with_python)
+                        run(module_ast, env=module_env, script_dir=module_dir, imported_files=imported_files, modules=modules, use_with_python=use_with_python, denv_path=denv_path)
                     except DarkError as e:
                         raise DarkRuntimeError(f"Error in module '{module_name}' ({canonical_path}):\n{e}", line=line)
             elif typ == 'from_import':
                 module_name, names, line = s[1], s[2], s[3]
                 
-                # Выполняем стандартный импорт, чтобы загрузить модуль в память.
-                # Если модуль уже был в modules — оставляем его. Если же модуль
-                # был загружен только ради `from ... use ...`, то после импорта
-                # удаляем его из `modules`, чтобы имя модуля не было доступно
-                # как переменная (т.е. `my_math` не появилось).
                 was_already_loaded = module_name in modules
                 import_stmt_node = ('import', module_name, line)
                 run_stmt(import_stmt_node, current_env)
 
                 if module_name not in modules:
-                    # Если модуль по какой-то причине не зарегистрировался — ошибка.
                     raise DarkRuntimeError(f"Не удалось загрузить модуль '{module_name}' для импорта имен.", line=line)
                 
                 module_env = modules[module_name]
 
-                # Если модуль был загружен только сейчас в рамках `from ... use ...`,
-                # удаляем его из глобального реестра модулей, чтобы его имя
-                # не было доступно как переменная.
                 if not was_already_loaded:
                     modules.pop(module_name, None)
 
-                # Копируем запрошенные имена в текущее окружение
                 for name_to_import in names:
                     if name_to_import in module_env:
                         current_env[name_to_import] = module_env[name_to_import]

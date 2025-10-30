@@ -7,3 +7,5 @@ build
 dist
 output
 *.iss
+denv
+script.dark

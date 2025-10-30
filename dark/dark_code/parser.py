@@ -91,7 +91,7 @@ class Parser:
                     if self.cur().type != 'ID': break 
                     names.append(self.eat('ID').value)
             
-            if self.cur().type == 'SEMI': self.eat('SEMI') # Эта строка была здесь, но не работала как надо
+            if self.cur().type == 'SEMI': self.eat('SEMI')
             return ('from_import', module_name, names, line)
         if tok.type == 'FUNCTION':
             self.eat('FUNCTION')
@@ -232,7 +232,7 @@ class Parser:
         
         if self.cur().type == 'SEMI':
             self.eat('SEMI')
-        return ('expr', node, line) # Возвращаем как выражение, которое будет выполнено
+        return ('expr', node, line) 
 
     def class_def(self):
         self.eat('CLASS')

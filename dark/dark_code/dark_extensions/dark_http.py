@@ -2,7 +2,6 @@ from urllib import request, error
 
 
 def native_http_get(args):
-    """Performs an HTTP GET request and returns a dictionary with status_code, headers, and body."""
     if len(args) != 1:
         raise TypeError("http.get() takes exactly 1 argument (url)")
     
@@ -47,11 +46,9 @@ def native_http_post(args):
 
     if not isinstance(url, str):
         raise TypeError("First argument to http.post() (url) must be a string")
-    if not isinstance(data, str):
-        raise TypeError("Second argument to http.post() (data) must be a string")
 
     try:
-        req = request.Request(url, data=data.encode('utf-8'), headers=headers, method='POST')
+        req = request.Request(url, data=data, headers=headers, method='POST')
         with request.urlopen(req, timeout=10) as response:
             response_headers = {key: value for key, value in response.getheaders()}
             return {
