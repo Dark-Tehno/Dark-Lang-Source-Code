@@ -1,7 +1,7 @@
 import sys
 import io
 import os
-import shutil # Добавляем для копирования файлов
+import shutil 
 import pickle
 import re
 import requests
@@ -124,23 +124,14 @@ def check_script(file_name):
         sys.exit(1)
 
 
-# --- Начало изменений для изоляции интерпретатора ---
 
-# Определяем, запущен ли скрипт как замороженный .exe (PyInstaller)
 IS_FROZEN = getattr(sys, 'frozen', False)
 
-# Определяем корневую директорию Dark, где лежит папка dark_code
 if IS_FROZEN:
-    # Если это .exe, PyInstaller кладет все в sys._MEIPASS
-    # или основной исполняемый файл находится в sys.executable
     DARK_ROOT_DIR = os.path.dirname(sys.executable)
 else:
-    # Если это .py, то dark_code должен быть рядом с dark_start.py
-    # или в sys.path. Мы предполагаем, что он в родительской директории.
     DARK_ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-
-# --- Конец изменений для изоляции интерпретатора ---
 
 def create_denv(env_name):
     """
@@ -160,21 +151,17 @@ def create_denv(env_name):
         os.makedirs(extensions_dir)
 
         if IS_FROZEN:
-            # --- Логика для .exe ---
             source_executable = sys.executable
-            # Назовем исполняемый файл в окружении просто 'dark' или 'dark.exe'
             target_executable_name = 'dark.exe' if sys.platform == 'win32' else 'dark'
             target_executable = os.path.join(bin_dir, target_executable_name)
             print(f"Копирование {source_executable} в {target_executable}...")
             shutil.copy(source_executable, target_executable)
         else:
-            # --- Логика для .py ---
             source_script = os.path.abspath(__file__)
             target_script = os.path.join(bin_dir, 'dark_start.py')
             print(f"Копирование {source_script} в {target_script}...")
             shutil.copy(source_script, target_script)
 
-            # Создаем исполняемый файл 'dark' для Linux/macOS
             dark_executable_content = f"""
 #!/bin/sh
 exec python "{os.path.join('$DARK_ENV', 'bin', 'dark_start.py')}" "$@"
@@ -183,7 +170,6 @@ exec python "{os.path.join('$DARK_ENV', 'bin', 'dark_start.py')}" "$@"
                 f.write(dark_executable_content.strip())
             os.chmod(os.path.join(bin_dir, 'dark'), 0o755)
 
-            # Создаем исполняемый файл 'dark.bat' для Windows
             dark_bat_content = f"""
 @echo off
 python "%DARK_ENV%\\bin\\dark_start.py" %*
@@ -191,11 +177,9 @@ python "%DARK_ENV%\\bin\\dark_start.py" %*
             with open(os.path.join(bin_dir, 'dark.bat'), 'w', encoding='utf-8') as f:
                 f.write(dark_bat_content.strip())
 
-        # Создаем пустой файл denv.cfg для совместимости и будущих нужд
         with open(os.path.join(env_name, 'denv.cfg'), 'w') as f:
             pass
 
-        # Создаем скрипт активации для bash/zsh
         activate_script_content = f"""
 #!/bin/sh
 export DARK_ENV="{os.path.abspath(env_name)}"
@@ -218,7 +202,6 @@ deactivate() {{
         with open(os.path.join(bin_dir, 'activate'), 'w', encoding='utf-8') as f:
             f.write(activate_script_content.strip())
 
-        # Создаем скрипт активации для PowerShell
         activate_ps1_content = f"""
 function global:deactivate {{
     $env:PS1 = $env:_OLD_PS1
@@ -306,7 +289,6 @@ def execute_dark_code(code, source_name, use_cache=True):
 
     script_dir = os.path.dirname(os.path.abspath(source_name)) if is_real_file else '.'
     
-    # Проверяем, активно ли виртуальное окружение denv
     denv_path = os.environ.get('DARK_ENV')
     if denv_path:
         if not NOT_OUTPUT_DEVN:

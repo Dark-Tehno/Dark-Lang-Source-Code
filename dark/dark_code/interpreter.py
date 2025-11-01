@@ -49,16 +49,13 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
     if imported_files is None: imported_files = set()
     if modules is None: modules = {}
 
-    # Создаем список путей для поиска модулей
     module_search_paths = [
-        script_dir, # Поиск в директории со скриптом
-        # Другие глобальные пути можно добавить сюда
+        script_dir, 
     ]
 
-    # Если denv активно, добавляем путь к его расширениям в начало списка
     if denv_path:
         denv_extensions_path = os.path.join(denv_path, 'dark_extensions')
-        module_search_paths.insert(0, denv_extensions_path) # Приоритет у denv
+        module_search_paths.insert(0, denv_extensions_path)
 
     BUILTIN_METHODS = {
         str: {
@@ -69,15 +66,33 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
             'startswith': (1, lambda o, a: o.startswith(a[0])),
             'endswith': (1, lambda o, a: o.endswith(a[0])),
             'find':  (1, lambda o, a: o.find(a[0])),
+            'replace': (2, lambda o, a: o.replace(a[0], a[1])),
+            'split': (1, lambda o, a: o.split(a[0])),
+            'join':  (1, lambda o, a: a[0].join(o)),
         },
         list: {
             'len':    (0, lambda o, a: len(o)),
             'append': (1, lambda o, a: o.append(a[0]) or 0),
             'pop':    (0, lambda o, a: o.pop()),
+            'insert': (2, lambda o, a: o.insert(a[0], a[1]) or 0),
+            'remove': (1, lambda o, a: o.remove(a[0]) or 0),
+            'index':  (1, lambda o, a: o.index(a[0])),
+            'count':  (1, lambda o, a: o.count(a[0])),
+            'reverse': (0, lambda o, a: o.reverse()),
+            'sort':   (0, lambda o, a: o.sort()),
+            'clear':  (0, lambda o, a: o.clear()),
         },
         dict: {
             'len':  (0, lambda o, a: len(o)),
             'keys': (0, lambda o, a: list(o.keys())),
+            'values': (0, lambda o, a: list(o.values())),
+            'items': (0, lambda o, a: list(o.items())),
+            'get':  (1, lambda o, a: o.get(a[0], None)),
+            'pop':  (1, lambda o, a: o.pop(a[0], None)),
+            'popitem': (0, lambda o, a: o.popitem()),
+            'clear': (0, lambda o, a: o.clear()),
+            'update': (1, lambda o, a: o.update(a[0])),
+            'setdefault': (2, lambda o, a: o.setdefault(a[0], a[1])),
         }
     }
     
@@ -106,7 +121,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
 
     def call_dark_function(func, args, call_site_line=None, self_instance=None):
         if len(args) != len(func.params):
-            raise DarkRuntimeError(f"Function '{func.name}' expects {len(func.params)} arguments, got {len(args)}", line=call_site_line)
+            raise DarkRuntimeError(f"Функция '{func.name}' ожидает {len(func.params)} аргументов, но было передано {len(args)} аргументов", line=call_site_line)
 
         call_env = dict(func.definition_env)
         
@@ -142,7 +157,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 return not is_truthy(val)
 
             if not isinstance(val, (int, float)):
-                raise DarkRuntimeError(f"Unary operator '{op}' not supported for type '{type(val).__name__}'", line=line)
+                raise DarkRuntimeError(f"Унарный оператор '{op}' не поддерживается для типа '{type(val).__name__}'", line=line)
             if op == '-':
                 return -val
             return val 
@@ -154,11 +169,11 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
         if t == 'to_int':
             val = eval_expr(node[1], current_env)
             try: return int(val)
-            except (ValueError, TypeError): raise DarkRuntimeError(f"Cannot convert value to int")
+            except (ValueError, TypeError): raise DarkRuntimeError(f"Не удается преобразовать значение в int")
         if t == 'to_float':
             val = eval_expr(node[1], current_env)
             try: return float(val)
-            except (ValueError, TypeError): raise DarkRuntimeError(f"Cannot convert value to float")
+            except (ValueError, TypeError): raise DarkRuntimeError(f"Не удается преобразовать значение в значение float")
         if t == 'to_str':
             val = eval_expr(node[1], current_env)
             return _dark_obj_to_str(val, current_env)
@@ -185,7 +200,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
             for k_node, v_node in node[1]:
                 key = eval_expr(k_node, current_env)
                 if not isinstance(key, (str, int, bool)):
-                    raise DarkRuntimeError(f"Unhashable type for dict key: {type(key).__name__}")
+                    raise DarkRuntimeError(f"Неразрушимый тип для ключа словаря: {type(key).__name__}")
                 value = eval_expr(v_node, current_env)
                 d[key] = value
             return d
@@ -370,7 +385,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                     constructor_args = [instance] + args
                     call_dark_function(constructor, constructor_args, line, self_instance=instance)
                 elif args:
-                    raise DarkRuntimeError(f"Class '{func.name}' does not have a constructor to accept arguments.", line=line)
+                    raise DarkRuntimeError(f"Класс '{func.name}' не имеет конструктора для принятия аргументов.", line=line)
                 return instance
 
             if isinstance(func, Function):
@@ -404,19 +419,16 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                     return
 
                 
-                # --- Новая логика поиска модулей ---
-                py_module_info = None # Информация о найденном Python-модуле (путь и имя)
-                module_path = None # Путь к .dark модулю
+                py_module_info = None
+                module_path = None 
 
                 for path in module_search_paths:
-                    # 1. Ищем папку-расширение (my_module/__init__.py)
                     potential_pkg_path = os.path.join(path, module_name)
                     init_py_path = os.path.join(potential_pkg_path, '__init__.py')
                     if os.path.isdir(potential_pkg_path) and os.path.exists(init_py_path):
                         py_module_info = {'path': init_py_path, 'name': module_name, 'dir': path}
                         break
 
-                    # 2. Ищем файл-расширение (my_module.py)
                     potential_py_path = os.path.join(path, module_name + ".py")
                     if os.path.exists(potential_py_path):
                         py_module_info = {'path': potential_py_path, 'name': module_name, 'dir': path}
@@ -424,20 +436,16 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 
                 if py_module_info:
                     try:
-                        # Добавляем родительскую директорию (например, dark_extensions) в sys.path,
-                        # чтобы Python мог найти пакет 'my_module'.
                         ext_dir = py_module_info['dir']
                         if ext_dir not in sys.path:
                             sys.path.insert(0, ext_dir)
                         
-                        # Импортируем модуль по его имени
                         py_module = __import__(py_module_info['name'])
                         
                         if hasattr(py_module, 'get_module') and callable(py_module.get_module):
                             modules[module_name] = py_module.get_module(use_tkinter=use_tkinter)
                             return
                         else:
-                            # Проверяем, есть ли get_module в __init__ для пакетов
                             if os.path.isdir(os.path.join(ext_dir, module_name)):
                                 raise DarkRuntimeError(f"Расширение Python '{module_name}' (пакет) не имеет функции 'get_module' в файле __init__.py.", line=line)
                             else:
@@ -447,7 +455,6 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                     except Exception as e:
                         raise DarkRuntimeError(f"Ошибка при загрузке расширения Python  '{module_name}': {e}", line=line)
 
-                # Если не нашли .py, ищем .dark модуль
                 if not py_module_info:
                     for path in module_search_paths:
                         potential_dark_path = os.path.join(path, module_name + ".dark")
@@ -477,7 +484,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                         
                         run(module_ast, env=module_env, script_dir=module_dir, imported_files=imported_files, modules=modules, use_with_python=use_with_python, denv_path=denv_path)
                     except DarkError as e:
-                        raise DarkRuntimeError(f"Error in module '{module_name}' ({canonical_path}):\n{e}", line=line)
+                        raise DarkRuntimeError(f"Ошибка в модуле '{module_name}' ({canonical_path}):\n{e}", line=line)
             elif typ == 'from_import':
                 module_name, names, line = s[1], s[2], s[3]
                 
@@ -512,15 +519,16 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 if base_class_name:
                     base_class = current_env.get(base_class_name)
                     if not isinstance(base_class, DarkClass):
-                        raise DarkRuntimeError(f"Base class '{base_class_name}' not found or is not a class.", line=line)
+                        raise DarkRuntimeError(f"Базовый класс '{base_class_name}' не найден или не является классом.", line=line)
+
 
                 methods = {}
                 for method_node in method_nodes:
                     if method_node[0] != 'func_def':
-                        raise DarkRuntimeError("Only functions can be defined in a class.", line=method_node[4])
+                        raise DarkRuntimeError("Только функции могут быть определены в классе.", line=method_node[4])
                     func_name, params, body, _ = method_node[1], method_node[2], method_node[3], method_node[4]
                     if not params:
-                        raise DarkRuntimeError(f"Method '{func_name}' must have at least one parameter for the instance.", line=method_node[4])
+                        raise DarkRuntimeError(f"Метод '{func_name}' должен иметь хотя бы один параметр для экземпляра.", line=method_node[4])
                     method_func = Function(func_name, params, body, dict(current_env))
                     method_func.definition_env['__file__'] = current_env.get('__file__', '<main>')
                     methods[func_name] = method_func
@@ -544,7 +552,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 value = eval_expr(value_node, current_env)
                 
                 if not isinstance(obj, DarkInstance):
-                    raise DarkRuntimeError(f"Only instances can have attributes assigned.", line=line)
+                    raise DarkRuntimeError(f"Атрибуты могут быть назначены только экземплярам.", line=line)
                 
                 if member_name.startswith('__'):
                     current_self = current_env.get('__current_self__')
@@ -608,9 +616,6 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                     for stmt_node in try_body:
                         run_stmt(stmt_node, current_env)
                 except DarkRuntimeError as e:
-                    
-                    
-                    
                     except_env = dict(current_env)
                     original_value = None
                     had_original_value = False

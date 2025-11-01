@@ -35,7 +35,6 @@ class DarkPackageManager:
 
         if command == 'install':
             if not command_args:
-                # requirements.txt
                 if os.path.exists('requirements.txt'):
                     with open('requirements.txt', 'r') as f:
                         for line in f:
@@ -78,28 +77,51 @@ class DarkPackageManager:
 
             if not data['items']:
                 print(f"Ошибка: Пакет '{package_name}' (репозиторий '{repo_name}') не найден на GitHub.")
-                return
+                return  
 
-            # Берем самый релевантный результат (обычно первый)
-            repo_data = data['items'][0]
+            repositories = [
+                repo for repo in data['items'] if repo['name'] == repo_name
+            ]
+
+        
+            if not repositories:
+                print(f"Ошибка: Пакет '{package_name}' (репозиторий '{repo_name}') не найден на GitHub.")
+                return
+            
+            if len(repositories) == 1:
+                repo_data = repositories[0]
+            else:
+                print(f"Найдено несколько пакетов '{package_name}'. Выберите, какой установить:")
+                for i, repo in enumerate(repositories):
+                    print(f"  {i + 1}) {repo['full_name']} - {repo.get('description', 'Нет описания')}")
+                
+                while True:
+                    try:
+                        choice = input(f"Введите номер (1-{len(repositories)}): ")
+                        choice_index = int(choice) - 1
+                        if 0 <= choice_index < len(repositories):
+                            repo_data = repositories[choice_index]
+                            break
+                        else:
+                            print("Неверный номер. Попробуйте еще раз.")
+                    except ValueError:
+                        print("Пожалуйста, введите число.")
+                    except (KeyboardInterrupt, EOFError):
+                        print("\nУстановка отменена.")
+                        return
             repo_full_name = repo_data['full_name']
             print(f"Найден репозиторий: {repo_full_name}")
 
-            # Скачиваем zip-архив
             zip_url = f"https://github.com/{repo_full_name}/archive/refs/heads/main.zip"
             print(f"Скачивание с {zip_url}...")
             zip_response = requests.get(zip_url)
             zip_response.raise_for_status()
 
             with zipfile.ZipFile(io.BytesIO(zip_response.content)) as z:
-                # Имя корневой папки в архиве обычно 'repo-name-main'
                 root_folder_in_zip = z.namelist()[0]
                 
-                # Ищем папку, которая является нашим пакетом (имя пакета)
-                # Это позволяет автору пакета иметь в репозитории и другие файлы (README, .gitignore)
                 package_folder_in_zip = None
                 for name in z.namelist():
-                    # Ищем путь вида 'repo-name-main/package_name/__init__.py'
                     parts = name.replace('\\', '/').split('/')
                     if len(parts) > 2 and parts[1] == package_name and parts[2] == '__init__.py':
                         package_folder_in_zip = f"{parts[0]}/{parts[1]}/"
@@ -115,12 +137,9 @@ class DarkPackageManager:
                     print(f"Предупреждение: пакет '{package_name}' уже существует. Переустановка...")
                     shutil.rmtree(target_path)
 
-                # Распаковываем только нужную папку
                 for member in z.infolist():
                     if member.filename.startswith(package_folder_in_zip) and not member.is_dir():
-                        # Создаем правильный путь для извлечения
                         source = z.open(member)
-                        # Убираем из пути 'repo-name-main/'
                         relative_path = member.filename.split('/', 1)[1] 
                         target_file = os.path.join(self.extensions_dir, relative_path)
                         os.makedirs(os.path.dirname(target_file), exist_ok=True)
@@ -174,10 +193,10 @@ class DarkPackageManager:
 Использование: dark --dpm <команда> [аргументы]
 
 Команды:
-  install <имя_пакета>...   Установить один или несколько пакетов из GitHub.
-                             Ищет репозитории с именем 'Dark_<имя_пакета>'.
-  uninstall <имя_пакета>... Удалить один или несколько установленных пакетов.
-  list                      Показать список всех установленных пакетов.
-  help                      Показать это сообщение.
-  freeze                    Сохранить список установленных пакетов в 'requirements.txt'.
+  install <имя_пакета>...       Установить один или несколько пакетов из GitHub.
+                                 Ищет репозитории с именем 'Dark_<имя_пакета>'.
+  uninstall <имя_пакета>...     Удалить один или несколько установленных пакетов.
+  list                          Показать список всех установленных пакетов.
+  help                          Показать это сообщение.
+  freeze <фаил_зависимостей>    Сохранить список установленных пакетов в 'requirements.txt'.
 """)

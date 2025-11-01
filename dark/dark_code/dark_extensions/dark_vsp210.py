@@ -51,11 +51,11 @@ def version(args):
     return __version__
 
 def docs(args):
-    if args: raise TypeError("docs() takes no arguments")
+    if args: raise TypeError("docs() не принимает аргументов")
     webbrowser.open("https://vsp210.ru/dark-lang/")
     return "Докментация по языку Dark"
 
 def telegram(args):
-    if args: raise TypeError("telegram() takes no arguments")
+    if args: raise TypeError("telegram() не принимает аргументов")
     webbrowser.open("https://t.me/vsp210_official/")
     return "Телеграм канал создателя языка Dark"

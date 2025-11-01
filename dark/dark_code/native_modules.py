@@ -17,10 +17,10 @@ def native_python_exec(args, env):
     Возвращает словарь с локальными переменными после выполнения.
     """
     if len(args) != 1:
-        raise TypeError("python_exec() takes exactly 1 argument (string)")
+        raise TypeError("python_exec() принимает ровно 1 аргумент (строку)")
     code = args[0]
     if not isinstance(code, str):
-        raise TypeError("Argument to python_exec() must be a string")
+        raise TypeError("Аргумент python_exec() должен быть строкой")
     
     exec_globals = dict(env)
     exec(code, exec_globals)

@@ -13,7 +13,7 @@ class Parser:
     def eat(self, t=None):
         tok = self.cur()
         if t and tok.type != t:
-            raise DarkSyntaxError(f'Expected {t}, got {tok.type}', line=tok.line, col=tok.col)
+            raise DarkSyntaxError(f'Ожидаемый токен {t}, получен {tok.type}', line=tok.line, col=tok.col)
         self.i += 1
         return tok
 
@@ -228,7 +228,7 @@ class Parser:
                 obj, member = node[1], node[2]
                 return ('member_assign', obj, member, rhs, assign_tok.line)
             else:
-                raise DarkSyntaxError("Invalid target for assignment", line=assign_tok.line, col=assign_tok.col)
+                raise DarkSyntaxError("Недопустимая цель для назначения", line=assign_tok.line, col=assign_tok.col)
         
         if self.cur().type == 'SEMI':
             self.eat('SEMI')
@@ -249,7 +249,7 @@ class Parser:
         while self.cur().type not in ('END', 'EOF'):
             if self.cur().type == 'SEMI': self.eat('SEMI'); continue
             if self.cur().type != 'FUNCTION':
-                raise DarkSyntaxError(f"Only function definitions are allowed inside a class body.", line=self.cur().line, col=self.cur().col)
+                raise DarkSyntaxError(f"Внутри тела класса разрешены только определения функций.", line=self.cur().line, col=self.cur().col)
             methods.append(self.stmt())
         self.eat('END')
         if self.cur().type == 'SEMI': self.eat('SEMI')
@@ -307,7 +307,7 @@ class Parser:
                     member_name = tok.type.lower()
                     self.eat(tok.type)
                 else:
-                    raise DarkSyntaxError(f'Expected identifier after dot, but got {tok.type}', line=tok.line, col=tok.col)
+                    raise DarkSyntaxError(f'Ожидал получить идентификатор после точки, но получил {tok.type}', line=tok.line, col=tok.col)
                 node = ('member_access', node, member_name, dot_tok.line)
             elif self.cur().type == 'LBRACKET':
                 lbracket_tok = self.eat('LBRACKET')
@@ -427,4 +427,4 @@ class Parser:
             e = self.expr()
             self.eat('RPAR')
             return e
-        raise DarkSyntaxError('Unexpected token in factor', line=tok.line, col=tok.col)
+        raise DarkSyntaxError('Неожиданный токен в факторе', line=tok.line, col=tok.col)

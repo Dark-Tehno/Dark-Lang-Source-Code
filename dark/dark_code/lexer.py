@@ -82,7 +82,7 @@ def lex(text):
         elif kind == 'SKIP' or kind == 'COMMENT':
             continue
         elif kind == 'MISMATCH':
-            tokens.append(Token('ERROR', f'Unexpected character: {val!r}', line_num, col))
+            tokens.append(Token('ERROR', f'Неожиданный персонаж: {val!r}', line_num, col))
             continue
     tokens.append(Token('EOF', line=line_num, col=1))
     return tokens

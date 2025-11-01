@@ -167,7 +167,7 @@ class GuiManager:
             return result.get('value')
 
         except queue.Empty:
-            raise DarkRuntimeError(f"GUI command '{command}' timed out after {timeout} seconds.")
+            raise DarkRuntimeError(f"Время выполнения команды графического интерфейса пользователя '{command}' истекло через {timeout} секунд.")
 
     def check_events(self):
         """Возвращает список всех накопившихся асинхронных событий (клики и т.д.)."""
@@ -196,7 +196,7 @@ def _get_manager():
     return gui_manager
 
 def _create_widget(widget_type, args):
-    if len(args) < 1: raise DarkRuntimeError(f"gui.create_{widget_type}() requires at least a parent_id argument.")
+    if len(args) < 1: raise DarkRuntimeError(f"gui.create_{widget_type}() требует, по крайней мере, аргумента parent_id.")
     parent_id = int(args[0])
     text = str(args[1]) if len(args) > 1 else ''
     manager = _get_manager()
@@ -204,7 +204,7 @@ def _create_widget(widget_type, args):
     return widget_id
 
 def native_gui_create_window(args):
-    if len(args) != 3: raise DarkRuntimeError("gui.create_window() requires 3 arguments: title, width, height")
+    if len(args) != 3: raise DarkRuntimeError("gui.create_window() требует 3 аргумента: title, width, height")
     _get_manager().send_command("create_window", title=str(args[0]), width=int(args[1]), height=int(args[2]))
     return 0
 
@@ -213,22 +213,22 @@ def native_gui_create_button(args): return _create_widget('button', args)
 def native_gui_create_entry(args): return _create_widget('entry', args)
 
 def native_gui_set_text(args):
-    if len(args) != 2: raise DarkRuntimeError("gui.set_text() requires 2 arguments: widget_id, text")
+    if len(args) != 2: raise DarkRuntimeError("gui.set_text() требует 2 аргумента: widget_id, text")
     _get_manager().send_command("set_text", widget_id=int(args[0]), text=str(args[1]))
     return None
 
 def native_gui_get_text(args):
-    if len(args) != 1: raise DarkRuntimeError("gui.get_text() requires 1 argument: widget_id")
+    if len(args) != 1: raise DarkRuntimeError("gui.get_text() требует 1 аргумент: widget_id")
     widget_id = int(args[0])
     manager = _get_manager()
     return manager.send_command_and_wait("get_text", widget_id=widget_id)
 
 def native_gui_check_events(args):
-    if args: raise DarkRuntimeError("gui.check_events() takes no arguments.")
+    if args: raise DarkRuntimeError("gui.check_events() не принимает аргументов.")
     return _get_manager().check_events()
 
 def native_gui_stop(args):
-    if args: raise DarkRuntimeError("gui.stop() takes no arguments.")
+    if args: raise DarkRuntimeError("gui.stop() не принимает аргументов.")
     manager = _get_manager()
     if manager:
         manager.stop()
