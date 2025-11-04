@@ -5,7 +5,7 @@ from dark_code.dark_exceptions import DarkRuntimeError
 
 
 def _run_internal_script(script_name):
-    """Helper to run internal .dark scripts."""
+    """Помощник для запуска внутренних скриптов .dark."""
     from dark_code.dark_lang import Parser, lex, run 
 
     if getattr(sys, 'frozen', False):

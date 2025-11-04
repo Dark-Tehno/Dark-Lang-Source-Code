@@ -25,42 +25,42 @@ def native_file_open(args):
         raise DarkRuntimeError(f"не удалось открыть файл '{file_name}': {e}")
 
 def native_file_read(args):
-    if len(args) != 1: raise TypeError("file.read() takes 1 argument (file_object)")
+    if len(args) != 1: raise TypeError("file.read() принимает 1 аргумент (file_object)")
     file_obj = args[0]
-    if not hasattr(file_obj, 'read'): raise TypeError("Argument is not a file object")
+    if not hasattr(file_obj, 'read'): raise TypeError("Аргумент не является файловым объектом")
     return file_obj.read()
 
 def native_file_write(args):
-    if len(args) != 2: raise TypeError("file.write() takes 2 arguments (file_object, content)")
+    if len(args) != 2: raise TypeError("file.write() принимает 2 аргумента (file_object, content)")
     file_obj, content = args
-    if not hasattr(file_obj, 'write'): raise TypeError("First argument is not a file object")
-    if not isinstance(content, str): raise TypeError("Content to write must be a string")
+    if not hasattr(file_obj, 'write'): raise TypeError("Первый аргумент не является файловым объектом")
+    if not isinstance(content, str): raise TypeError("Содержимое для записи должно быть строкой")
     file_obj.write(content)
     return None
 
 def native_file_close(args):
-    if len(args) != 1: raise TypeError("file.close() takes 1 argument (file_object)")
+    if len(args) != 1: raise TypeError("file.close() принимает 1 аргумент (file_object)")
     file_obj = args[0]
-    if not hasattr(file_obj, 'close'): raise TypeError("Argument is not a file object")
+    if not hasattr(file_obj, 'close'): raise TypeError("Аргумент не является файловым объектом")
     file_obj.close()
     return None
 
 def native_file_readline(args):
-    if len(args) != 1: raise TypeError("file.readline() takes 1 argument (file_object)")
+    if len(args) != 1: raise TypeError("file.readline() принимает 1 аргумент (file_object)")
     file_obj = args[0]
-    if not hasattr(file_obj, 'readline'): raise TypeError("Argument is not a file object")
+    if not hasattr(file_obj, 'readline'): raise TypeError("Аргумент не является файловым объектом")
     return file_obj.readline()
 
 def native_file_readlines(args):
-    if len(args) != 1: raise TypeError("file.readlines() takes 1 argument (file_object)")
+    if len(args) != 1: raise TypeError("file.readlines() принимает 1 аргумент (file_object)")
     file_obj = args[0]
-    if not hasattr(file_obj, 'readlines'): raise TypeError("Argument is not a file object")
+    if not hasattr(file_obj, 'readlines'): raise TypeError("Аргумент не является файловым объектом")
     return file_obj.readlines()
 
 def native_file_seek(args):
-    if len(args) != 2: raise TypeError("file.seek() takes 2 arguments (file_object, offset)")
+    if len(args) != 2: raise TypeError("file.seek() принимает 2 аргумента (file_object, offset)")
     file_obj, offset = args
-    if not hasattr(file_obj, 'seek'): raise TypeError("First argument is not a file object")
-    if not isinstance(offset, int): raise TypeError("Offset must be an integer")
+    if not hasattr(file_obj, 'seek'): raise TypeError("Первый аргумент не является файловым объектом")
+    if not isinstance(offset, int): raise TypeError("Смещение должно быть целым числом")
     file_obj.seek(offset)
     return None

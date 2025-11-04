@@ -58,6 +58,15 @@ class DarkPackageManager:
             self.list_packages()
         elif command == 'freeze':
             self.freeze_packages()
+        elif command == 'doctor':
+            self.doctor_check()
+        elif command == 'update':
+            if not command_args:
+                print("Ошибка: команда 'update' требует имя пакета.")
+                self.show_help()
+                sys.exit(1)
+            for package_name in command_args:
+                self.update_package(package_name)
         else:
             print(f"Неизвестная команда: '{command}'")
             self.show_help()
@@ -184,6 +193,44 @@ class DarkPackageManager:
                 if os.path.isdir(os.path.join(self.extensions_dir, item)):
                     f.write(f"{item}\n")
         print(f"Список установленных пакетов сохранен в '{requirements}'.")
+
+    
+    def doctor_check(self):
+        """Проверяет наличие необходимых пакетов."""
+        print("Проверка наличия необходимых пакетов...")
+        if not os.path.exists(self.extensions_dir):
+            print(f"  Директория расширений '{self.extensions_dir}' не существует. Создание...")
+            os.makedirs(self.extensions_dir)
+        else:
+            print(f"  Директория расширений '{self.extensions_dir}' существует.")
+
+        if not os.access(self.extensions_dir, os.W_OK):
+            print(f"  Ошибка: Нет прав на запись в директорию расширений '{self.extensions_dir}'.")
+        else:
+            print(f"  Права на запись в директорию расширений '{self.extensions_dir}' в порядке.")
+
+        try:
+            req = requests.get("https://api.github.com")
+            req.raise_for_status()
+            print("  Подключение к GitHub успешно.")
+        except requests.exceptions.RequestException as e:
+            print(f"  Ошибка: Не удалось подключиться к GitHub. Проверьте ваше интернет-соединение. ({e})")
+            sys.exit(1)
+
+    
+    def update_package(self, package_name):
+        """Обновляет пакет."""
+        print(f"Обновление пакета '{package_name}'...")
+        package_path = os.path.join(self.extensions_dir, package_name)
+        if not os.path.isdir(package_path):
+            print(f"Пакет '{package_name}' не установлен. Используйте 'dark --dpm install {package_name}' для установки.")
+            return
+        
+        self.uninstall_package(package_name)
+        self.install_package(package_name)
+        
+
+        print("Проверка завершена.") 
 
     def show_help(self):
         """Показывает справку по использованию."""

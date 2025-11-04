@@ -5,6 +5,7 @@ import shutil
 import pickle
 import re
 import requests
+import configparser
 
 
 try:
@@ -22,6 +23,7 @@ try:
 except ImportError:
     pass
 
+from dark_code import __version__
 from dark_code.dark_lang import Parser, lex, run, DarkRuntimeError, StaticAnalyzer
 
 FROZEN_SCRIPT_CONTENT = None
@@ -79,14 +81,15 @@ def check_script(file_name):
     Выводит ошибки в stderr в формате, понятном для VS Code.
     """
     try:
-        if not os.path.exists(file_name):
-            print(f"Ошибка: Файл не найден: {os.path.abspath(file_name)}", file=sys.stderr)
-            sys.exit(1)
+        try:
+            if not os.path.exists(file_name):
+                print(f"Ошибка: Файл не найден: {os.path.abspath(file_name)}", file=sys.stderr)
+                sys.exit(1)
 
-        with open(file_name, 'r', encoding='utf-8') as f:
-            src = f.read()
-    except Exception as e:
-        print(f"Произошла непредвиденная ошибка: {e}")
+            with open(file_name, 'r', encoding='utf-8') as f:
+                src = f.read()
+        except Exception as e:
+            print(f"Произошла непредвиденная ошибка: {e}")
 
         use_with_python = False
         if src.lstrip().startswith('#!USE_WITH_PYTHON'):
@@ -110,7 +113,6 @@ def check_script(file_name):
                 translated_message = _translate_syntax_error_message(e.message)
                 print(f"Синтаксическая ошибка в файле {os.path.abspath(file_name)}:{e.line}:{e.column}: {translated_message}", file=sys.stderr)
             sys.exit(1)
-
         analyzer = StaticAnalyzer()
         semantic_errors = analyzer.analyze(ast, os.path.abspath(file_name), use_with_python=use_with_python)
         if semantic_errors:
@@ -170,15 +172,32 @@ exec python "{os.path.join('$DARK_ENV', 'bin', 'dark_start.py')}" "$@"
                 f.write(dark_executable_content.strip())
             os.chmod(os.path.join(bin_dir, 'dark'), 0o755)
 
-            dark_bat_content = f"""
-@echo off
-python "%DARK_ENV%\\bin\\dark_start.py" %*
+
+        import datetime
+        from datetime import timezone
+
+        type = 'frozen' if IS_FROZEN else 'source'
+        creation_time = datetime.datetime.now(timezone.utc).isoformat()
+
+        denv_cfg_content = f"""[denv]
+type = {type}
+dark_version = {__version__.__version__}
+denv_root = {os.path.abspath(bin_dir)}
+created_at = {creation_time}
+
+[project]
+script = script.dark
 """
-            with open(os.path.join(bin_dir, 'dark.bat'), 'w', encoding='utf-8') as f:
-                f.write(dark_bat_content.strip())
 
         with open(os.path.join(env_name, 'denv.cfg'), 'w') as f:
-            pass
+            f.write(denv_cfg_content.strip())
+        
+        script_dark = """#!nocache
+println("Hello, Dark!")
+"""
+        with open(os.path.join('script.dark'), 'w') as f:
+            f.write(script_dark.strip())
+
 
         activate_script_content = f"""
 #!/bin/sh
@@ -223,39 +242,40 @@ $env:PATH = "{os.path.abspath(bin_dir)};" + $env:PATH
 
         print(f"Виртуальное окружение '{env_name}' успешно создано.")
         print("\nЧтобы активировать его, используйте:")
-        if sys.platform == 'win32':
-            print(f"  .\\{os.path.join(env_name, 'bin', 'activate.ps1')}")
-        else:
-            print(f"  source ./{os.path.join(env_name, 'bin', 'activate')}")
+        print(f"  source ./{os.path.join(env_name, 'bin', 'activate')}")
 
     except Exception as e:
         print(f"Произошла ошибка при создании окружения: {e}", file=sys.stderr)
         sys.exit(1)
 
-def execute_dark_code(code, source_name, use_cache=True):
+def execute_dark_code(code, source_name, use_cache=True, cache_dir = "__darkcache__", USE_WITH_PYTHON = False, USE_TKINTER = True, NOT_OUTPUT_DEVN = False):
     """
     Выполняет код Dark из строки, управляя кэшированием и ошибками.
     """
     ast = None
-    cache_dir = "__darkcache__"
     nocache = not use_cache
-    
-    USE_WITH_PYTHON = False
-    USE_TKINTER = True
-    NOT_OUTPUT_DEVN = False
 
     first_line = code.split('\n', 1)[0]
     if first_line.startswith('#!'):
         if first_line.startswith('#!nocache'):
-            nocache = True
+            code = '\n'.join(code.split('\n')[1:])
+            return execute_dark_code(code, source_name, use_cache=False, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
         elif first_line.startswith('#!cachedir "'):
             cache_dir = first_line.split('"')[1]
+            code = '\n'.join(code.split('\n')[1:])
+            return execute_dark_code(code, source_name, use_cache=use_cache, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
         elif first_line.startswith('#!USE_WITH_PYTHON'):
             USE_WITH_PYTHON = True
+            code = '\n'.join(code.split('\n')[1:])
+            return execute_dark_code(code, source_name, use_cache=use_cache, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
         elif first_line.startswith('#!notkinter'):
             USE_TKINTER = False
+            code = '\n'.join(code.split('\n')[1:])
+            return execute_dark_code(code, source_name, use_cache=use_cache, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
         elif first_line.startswith('#!NOT_OUTPUT_DEVN'):
             NOT_OUTPUT_DEVN = True
+            code = '\n'.join(code.split('\n')[1:])
+            return execute_dark_code(code, source_name, use_cache=use_cache, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
             
 
     is_real_file = os.path.exists(source_name)
@@ -322,6 +342,29 @@ def main():
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
+    if len(sys.argv) == 2 and sys.argv[1] == 'run':
+        denv_path = os.environ.get('DARK_ENV')
+        if not denv_path:
+            print("Ошибка: Команда 'run' может быть использована только внутри активированного окружения 'denv'.", file=sys.stderr)
+            sys.exit(1)
+
+        config_path = os.path.join(denv_path, 'denv.cfg')
+        if not os.path.exists(config_path):
+            print(f"Ошибка: Файл конфигурации 'denv.cfg' не найден в '{denv_path}'.", file=sys.stderr)
+            sys.exit(1)
+
+        config = configparser.ConfigParser()
+        config.read(config_path)
+
+        if 'project' in config and 'script' in config['project']:
+            script_name = config['project']['script']
+            script_path = os.path.join(denv_path, '..', script_name) 
+            run_script(script_path)
+            sys.exit(0)
+        else:
+            print("Ошибка: Запись 'script' не найдена в секции [project] файла 'denv.cfg'.", file=sys.stderr)
+            sys.exit(1)
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     if len(sys.argv) < 2:
@@ -347,7 +390,6 @@ def main():
             mode = 'denv'
             file_arg_index = 2
         elif sys.argv[1] == '--version':
-            from dark_code import __version__
             print(__version__.__version__)
             sys.exit(0)
         elif sys.argv[1] == '--dpm':
@@ -364,6 +406,7 @@ def main():
             print("  --version  Показать версию Dark.")
             print("  --help     Показать это сообщение.")
             print("  --dpm      Запустить менеджер пакетов Dark.")
+            print("  run        Запустить файл указанный в секции [project] файла 'denv.cfg'.")
             sys.exit(0)
         else:
             print(f"Неизвестный флаг: {sys.argv[1]}", file=sys.stderr)

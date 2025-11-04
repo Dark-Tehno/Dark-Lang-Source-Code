@@ -116,7 +116,7 @@ class StaticAnalyzer:
 
     def _analyze_ast(self, ast, file_path, use_with_python=False):
         self.current_file_path = file_path
-        
+
         for name, info in BUILTIN_FUNCTIONS_INFO.items():
             self.define(name, {'type': 'builtin_function', **info})
 
@@ -154,6 +154,16 @@ class StaticAnalyzer:
                 module_exports = self._get_or_analyze_module(module_name, script_dir, line)
                 if module_exports is not None:
                     self.define(module_name, {'type': 'module', 'exports': module_exports})
+            elif stmt[0] == 'from_import':
+                module_name, import_name, line = stmt[1], stmt[2], stmt[3]
+                script_dir = os.path.dirname(file_path)
+                module_exports = self._get_or_analyze_module(module_name, script_dir, line)
+                if module_exports is not None:
+                    for imported_name in import_name:
+                        if imported_name not in module_exports:
+                            self.add_error(f"Имя '{imported_name}' не найдено в модуле '{module_name}'", line, self.current_file_path)
+                        else:
+                            self.define(imported_name, module_exports[imported_name])
 
         for stmt in ast[1]:
             self.visit_stmt(stmt)

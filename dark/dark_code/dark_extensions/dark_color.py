@@ -39,41 +39,41 @@ def color(args, color_name):
     if color_name in COLOR_CODES:
         return COLOR_CODES[color_name] + text + RESET_CODE
     else:
-        raise DarkRuntimeError(f"Unsupported color: {color_name}")
+        raise DarkRuntimeError(f"Неподдерживаемый цвет: {color_name}")
 
 def rgb_color(args):
-    if len(args) != 4: raise TypeError("rgb() takes 3 arguments (r, g, b, text)")
+    if len(args) != 4: raise TypeError("rgb() принимает 3 аргумента (r, g, b, text)")
     r, g, b, text = args
     if not isinstance(r, int) or not isinstance(g, int) or not isinstance(b, int):
-        raise TypeError("RGB components must be integers")
+        raise TypeError("Компоненты RGB должны быть целыми числами")
     if not isinstance(text, str):
-        raise TypeError("Text argument must be a string")
+        raise TypeError("Текстовый аргумент должен быть строкой")
     if not all(isinstance(c, int) and 0 <= c <= 255 for c in [r, g, b]):
-        raise TypeError("RGB components must be integers between 0 and 255")
+        raise TypeError("Компоненты RGB должны быть целыми числами от 0 до 255")
     if not isinstance(text, str):
-        raise TypeError("Text argument must be a string")
+        raise TypeError("Текстовый аргумент должен быть строкой")
     
     return f"\033[38;2;{r};{g};{b}m" + text + "\033[0m"
 
 def rgba_color(args):
-    if len(args) != 5: raise TypeError("rgba() takes 4 arguments (r, g, b, a, text)")
+    if len(args) != 5: raise TypeError("rgba() принимает 4 аргумента (r, g, b, a, text)")
     r, g, b, a, text = args
     if not all(isinstance(c, int) and 0 <= c <= 255 for c in [r, g, b]):
-        raise TypeError("RGB components must be integers between 0 and 255")
+        raise TypeError("Компоненты RGB должны быть целыми числами от 0 до 255")
     if not isinstance(a, (int, float)) or not (0 <= a <= 1):
-        raise TypeError("Alpha component must be a number between 0 and 1")
+        raise TypeError("Альфа-компонент должен быть числом от 0 до 1")
     if not isinstance(text, str):
-        raise TypeError("Text argument must be a string")
+        raise TypeError("Текстовый аргумент должен быть строкой")
     
     return f"\033[38;2;{r};{g};{b}m" + text + "\033[0m"
 
 def hex_color(args):
-    if len(args) != 2: raise TypeError("hex() takes 2 arguments (hex_code, text)")
+    if len(args) != 2: raise TypeError("hex() принимает 2 аргумента (hex_code, text)")
     hex_code, text = args
     if not isinstance(hex_code, str):
-        raise TypeError("Hex code must be a string")
+        raise TypeError("Шестнадцатеричный код должен быть строкой")
     if not isinstance(text, str):
-        raise TypeError("Text argument must be a string")
+        raise TypeError("Текстовый аргумент должен быть строкой")
     
     hex_code = hex_code.lstrip('#')
     if hex_code.lower().startswith('0x'):
@@ -82,27 +82,27 @@ def hex_color(args):
     if len(hex_code) == 3:
         hex_code = ''.join([c*2 for c in hex_code])
     if len(hex_code) != 6:
-        raise DarkRuntimeError("Invalid hex code format. Expected 3 or 6 characters.")
+        raise DarkRuntimeError("Неверный формат hex кода. Ожидаемые 3 или 6 символов..")
     
     try:
         r = int(hex_code[0:2], 16)
         g = int(hex_code[2:4], 16)
         b = int(hex_code[4:6], 16)
     except ValueError:
-        raise DarkRuntimeError("Invalid hex code value.")
+        raise DarkRuntimeError("Недопустимое значение hex кода.")
     
     return f"\033[38;2;{r};{g};{b}m" + text + "\033[0m"
 
 def hsl_color(args):
-    if len(args) != 4: raise TypeError("hsl() takes 3 arguments (h, s, l, text)")
+    if len(args) != 4: raise TypeError("функция hsl() принимает 3 аргумента(h, s, l, text)")
     h, s, l, text = args
     if not all(isinstance(c, (int, float)) for c in [h, s, l]):
-        raise TypeError("HSL components must be numbers")
+        raise TypeError("Компоненты HSL должны быть пронумерованы")
     if not isinstance(text, str):
-        raise TypeError("Text argument must be a string")
+        raise TypeError("Текстовый аргумент должен быть строкой")
     
     if not (0 <= h <= 360 and 0 <= s <= 100 and 0 <= l <= 100):
-        raise DarkRuntimeError("HSL values out of range: h (0-360), s (0-100), l (0-100)")
+        raise DarkRuntimeError("Значения HSL вне диапазона: h (0-360), s (0-100), l (0-100)")
 
     s /= 100
     l /= 100

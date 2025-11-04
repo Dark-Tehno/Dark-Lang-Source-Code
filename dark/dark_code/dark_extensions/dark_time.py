@@ -3,12 +3,12 @@ import time as python_time
 
 
 def native_time_time(args):
-    """Returns the current time in seconds since the Epoch."""
+    """Возвращает текущее время в секундах с момента начала эпохи."""
     if args: raise TypeError("Функция time.time() не принимает аргументов")
     return python_time.time()
 
 def native_time_sleep(args):
-    """Sleeps for a specified number of seconds."""
+    """Переходит в спящий режим на определенное количество секунд."""
     if len(args) != 1: raise TypeError("time.sleep() принимает 1 аргумент (секунды)")
     seconds = args[0]
     if not isinstance(seconds, (int, float)):

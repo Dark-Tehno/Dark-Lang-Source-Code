@@ -13,7 +13,7 @@ class Token:
 TOKEN_SPEC = [
     ('NUMBER',  r'(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?'),
     ('ID',      r'[A-Za-z_]\w*'),
-    ('STRING',  r'"""(?:.|\n)*?"""|\'\'\'(?:.|\n)*?\'\'\'|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\\\'])*\''),
+    ('STRING',  r'"""(?:.|\n)*?"""|\'\'\'(?:.|\n)*?\'\'\'|`(?:.|\n)*?`|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\\\'])*\''),
     ('COMMENT', r'#.*'),
     ('RELOP',   r'==|!=|<=|>=|<|>'),
     ('OP',      r'[\+\-\*/]'),
@@ -30,8 +30,8 @@ TOKEN_SPEC = [
     ('SEMI',    r';'),
     ('SKIP',    r'[ \t]+'),
     ('NEWLINE', r'\n'),
+    ('MISMATCH', r'.'),
 ]
-TOKEN_SPEC.append(('MISMATCH', r'.')) 
 KEYWORDS = {'print', 'println', 'if', 'then', 'end', 'while', 'do', 'input', 'to_int', 'to_str', 'type', 'else', 'import', 'true', 'false', 'function', 'return', 'for', 'in', 'to_float', 'try', 'except', 'and', 'or', 'not', 'class', 'use', 'from'}
 master_re = re.compile('|'.join(f'(?P<{name}>{pattern})' for name,pattern in TOKEN_SPEC))
 
@@ -58,8 +58,11 @@ def lex(text):
                 tokens.append(Token('ID', val, line_num, col))
         elif kind == 'STRING':
             token_line_num = line_num
-            if val.startswith('"""') or val.startswith("'''"):
-                str_val = val[3:-3]
+            if val.startswith('"""') or val.startswith("'''") or val.startswith('`'):
+                if val.startswith('"""') or val.startswith("'''"):
+                    str_val = val[3:-3]
+                else:
+                    str_val = val[1:-1]
                 num_newlines = val.count('\n')
                 if num_newlines > 0:
                     line_num += num_newlines
