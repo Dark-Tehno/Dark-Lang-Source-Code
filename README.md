@@ -12,7 +12,7 @@
   <p>
     <img src="https://img.shields.io/badge/version-0.3.7-blue.svg" alt="Version">
     <img src="https://img.shields.io/badge/language-Python-blue.svg" alt="Language">
-    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License">
+    <img src="https://img.shields.io/github/license/Dark-Tehno/Dark-Lang-Source-Code" alt="License">
   </p>
 </div>
 

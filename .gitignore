@@ -1,11 +1,13 @@
 .venv
+venv
 __darkcache__
 *.pyc
 __pycache__
 *.spec
 build
 dist
-output
+Output
 *.iss
 denv
 script.dark
+Dark-Lang-setup-v*.exe

@@ -384,8 +384,6 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 if constructor:
                     constructor_args = [instance] + args
                     call_dark_function(constructor, constructor_args, line, self_instance=instance)
-                elif args:
-                    raise DarkRuntimeError(f"Класс '{func.name}' не имеет конструктора для принятия аргументов.", line=line)
                 return instance
 
             if isinstance(func, Function):

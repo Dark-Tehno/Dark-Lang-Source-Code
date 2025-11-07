@@ -206,8 +206,6 @@ class StaticAnalyzer:
                             expected_args = constructor_info.get('params', 1) - 1
                             if len(args) != expected_args:
                                 self.add_error(f"Конструктор для класса '{func_name}' ожидает {expected_args} аргументов, но было передано {len(args)}", call_line)
-                        elif len(args) > 0:
-                            self.add_error(f"Класс '{func_name}' не имеет конструктора для приёма аргументов", call_line)
             
             elif callable_node[0] == 'member_access':
                 obj_node, member_name = callable_node[1], callable_node[2]
