@@ -33,7 +33,6 @@ def native_python_exec(args, env):
     return exec_globals
 
 
-
 NATIVE_MODULES = {
     'os': {
         'getcwd': native_os_getcwd,
@@ -72,18 +71,20 @@ NATIVE_MODULES = {
     'http': {
         'get': native_http_get,
         'post': native_http_post,
+        'json': native_http_json,
+        'text': native_http_text,
     },
     'time': {
         'time': native_time_time,
         'sleep': native_time_sleep,
     },
     'vsp210': {
-        'philosophy': philosophy,
-        'history': history,
-        'calculator': calculator,
-        'version': version,
-        'docs': docs,
-        'telegram': telegram,
+        'philosophy': lambda args, env: philosophy(args, env.get('dark_root_dir')),
+        'history': lambda args, env: history(args, env.get('dark_root_dir')),
+        'calculator': lambda args, env: calculator(args, env.get('dark_root_dir')),
+        'version': lambda args, env: version(args),
+        'docs': lambda args, env: docs(args),
+        'telegram': lambda args, env: telegram(args),
     },
     'file': {
         'open': native_file_open,

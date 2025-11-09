@@ -130,7 +130,9 @@ def check_script(file_name):
 IS_FROZEN = getattr(sys, 'frozen', False)
 
 if IS_FROZEN:
-    DARK_ROOT_DIR = os.path.dirname(sys.executable)
+    # В режиме --standalone, sys.executable находится внутри .dist папки.
+    # Нам нужна сама .dist папка как корень.
+    DARK_ROOT_DIR = os.path.dirname(os.path.abspath(sys.executable))
 else:
     DARK_ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -314,7 +316,7 @@ def execute_dark_code(code, source_name, use_cache=True, cache_dir = "__darkcach
         if not NOT_OUTPUT_DEVN:
             print(f"--- Запуск в окружении denv: {denv_path} ---")
 
-    run(ast, source_name=source_name, script_dir=script_dir, use_with_python=USE_WITH_PYTHON, use_tkinter=USE_TKINTER, denv_path=denv_path)
+    run(ast, source_name=source_name, script_dir=script_dir, use_with_python=USE_WITH_PYTHON, use_tkinter=USE_TKINTER, denv_path=denv_path, dark_root_dir=DARK_ROOT_DIR)
 
 def run_script(file_name):
     """

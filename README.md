@@ -1,16 +1,16 @@
 <div align="center">
   <img src="https://www.vsp210.ru/static/img/image-not_bg.png" alt="Логотип Dark" width="150" height="150">
   <h1>Dark Programming Language</h1>
-  <p>Исходный код интерпретируемого языка программирования Dark, написанного на Python.</p>
+  <p>Исходный код интерпретируемого языка программирования Dark, написанного на Python. Современный, динамический язык, созданный с акцентом на простоту и эффективность.</p>
 
   <p>
     <a href="https://vsp210.ru/dark-lang/"><strong>Документация</strong></a> ·
-    <a href="https://github.com/Dark-Tehno/Dark-Lang-Source-Code/issues">Сообщить об ошибке</a> ·
-    <a href="https://marketplace.visualstudio.com/items?itemName=vsp210.dark-lang">VS Code Extension</a>
+    <a href="https://github.com/Dark-Tehno/Dark-Lang-Source-Code/issues/new/choose"><strong>Сообщить об ошибке / Предложить идею</strong></a> ·
+    <a href="https://marketplace.visualstudio.com/items?itemName=vsp210.dark-lang"><strong>Расширение для VS Code</strong></a>
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/version-0.3.7-blue.svg" alt="Version">
+    <a href="https://vsp210.ru/dark-lang/"><img src="https://img.shields.io/badge/version-0.4.0-blue.svg" alt="Version"></a>
     <img src="https://img.shields.io/badge/language-Python-blue.svg" alt="Language">
     <img src="https://img.shields.io/github/license/Dark-Tehno/Dark-Lang-Source-Code" alt="License">
   </p>
@@ -65,7 +65,7 @@ type_writer(history, 0.05)
 ## 🛠️ Установка и использование
 
 1.  **Скачайте установщик** последней версии со страницы документации.
-    *   <a href="https://vsp210.ru/static/files/Dark-Lang-setup-v0.3.7.exe" class="download-button">**Скачать установщик Dark v0.3.7(Для Windows)**</a>
+    *   <a href="https://vsp210.ru/static/files/Dark-Lang-setup-v0.4.0.exe" class="download-button">**Скачать установщик Dark v0.4.0(Для Windows)**</a>
     *   Для Linux загрузите исходный код и перейдите в папку Dark-Lang-Source-Code через терминал.
     Затем выполните:
     ```bash
@@ -78,7 +78,7 @@ type_writer(history, 0.05)
 3.  **Настройте VS Code(Windows)**, указав путь к исполняемому файлу `dark_start.exe` в `settings.json`:
     ```json
     {
-        "dark.executorPath": "C:\Program Files (x86)\Dark-Lang-0-3-5\dark_start.exe"
+        "dark.executorPath": "C:\Program Files (x86)\Dark-Lang\dark_start.exe"
     }
     ```
     (Линус версия сделает всё сама)
@@ -107,7 +107,7 @@ dark_start.exe --check my_script.dark
 
 ## 🤝 Содействие
 
-Если вы нашли ошибку или у вас есть предложение по улучшению языка, пожалуйста, создайте **Issue**. Любая обратная связь очень важна для развития проекта!
+Если вы нашли ошибку или у вас есть предложение по улучшению языка, пожалуйста, **создайте Issue**. Это лучший способ помочь проекту. Любая обратная связь очень важна для его развития!
 
 ---
 

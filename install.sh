@@ -6,7 +6,7 @@ fi
 
 INSTALL_BIN_DIR="/usr/local/bin"
 INSTALL_LIB_DIR="/usr/local/lib/dark"
-EXECUTABLE="dark/dark_start"
+EXECUTABLE_NAME="dark" # Имя исполняемого файла, созданного Nuitka (из build.sh)
 
 echo "Начало установки Dark Programming Language..."
 
@@ -14,17 +14,23 @@ echo "Создание директории для библиотек: $INSTALL_
 mkdir -p "$INSTALL_LIB_DIR"
 
 echo "Копирование исполняемого файла в $INSTALL_BIN_DIR"
-cp "./$EXECUTABLE" "$INSTALL_BIN_DIR/dark"
+# Копируем все содержимое папки 'release-linux' (созданной build.sh)
+# в директорию установки. Это включает исполняемый файл 'dark' и папку 'code'.
+cp -r dark/release-linux/* "$INSTALL_LIB_DIR/"
 
-echo "Копирование библиотек в $INSTALL_LIB_DIR"
-cp -r ./dark/dark_code "$INSTALL_LIB_DIR/"
+# Устанавливаем права на исполнение для самого исполняемого файла
+echo "Установка прав на исполнение для '$INSTALL_LIB_DIR/$EXECUTABLE_NAME'"
+chmod +x "$INSTALL_LIB_DIR/$EXECUTABLE_NAME"
 
-echo "Установка прав на исполнение для 'dark'"
-chmod +x "$INSTALL_BIN_DIR/dark"
+echo "Создание символической ссылки для запуска в $INSTALL_BIN_DIR"
+# Создаем символическую ссылку на исполняемый файл
+ln -sf "$INSTALL_LIB_DIR/$EXECUTABLE_NAME" "$INSTALL_BIN_DIR/$EXECUTABLE_NAME"
 
 echo ""
 echo "Установка успешно завершена!"
 echo "Теперь вы можете запускать свои скрипты командой: dark your_script.dark"
-echo "Для удаления выполните 'sudo rm /usr/local/bin/dark && sudo rm -rf /usr/local/lib/dark'"
+echo "Для удаления выполните:"
+echo "  sudo rm \"$INSTALL_BIN_DIR/$EXECUTABLE_NAME\""
+echo "  sudo rm -rf \"$INSTALL_LIB_DIR\""
 
 exit 0

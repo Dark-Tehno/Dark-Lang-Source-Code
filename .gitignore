@@ -1,5 +1,6 @@
 .venv
 venv
+.venv-linux
 __darkcache__
 *.pyc
 __pycache__
@@ -11,3 +12,6 @@ Output
 denv
 script.dark
 Dark-Lang-setup-v*.exe
+nuitka-crash-report.xml
+build-linux
+build

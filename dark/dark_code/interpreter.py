@@ -43,14 +43,16 @@ class ReturnSignal(Exception):
         self.value = value
 
 
-def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=None, modules=None, use_with_python=False, use_tkinter=True, denv_path=None):
+def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=None, modules=None, use_with_python=False, use_tkinter=True, denv_path=None, dark_root_dir=None):
     if env is None: env = {}
     if script_dir is None: script_dir = '.'
+    env['dark_root_dir'] = dark_root_dir
     if imported_files is None: imported_files = set()
     if modules is None: modules = {}
-
     module_search_paths = [
-        script_dir, 
+        script_dir,
+        # Добавляем путь к стандартной библиотеке
+        os.path.join(dark_root_dir, 'code'),
     ]
 
     if denv_path:
@@ -391,6 +393,10 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
             
             if callable(func): 
                 try:
+                    import inspect
+                    sig = inspect.signature(func)
+                    if 'env' in sig.parameters:
+                        return func(args, current_env)
                     return func(args)
                 except TypeError as e:
                     raise DarkRuntimeError(f"ошибка вызова нативной функции: {e}", line=line) from e
@@ -480,7 +486,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                         modules[module_name] = module_env
                         module_env['__file__'] = canonical_path 
                         
-                        run(module_ast, env=module_env, script_dir=module_dir, imported_files=imported_files, modules=modules, use_with_python=use_with_python, denv_path=denv_path)
+                        run(module_ast, env=module_env, script_dir=module_dir, imported_files=imported_files, modules=modules, use_with_python=use_with_python, denv_path=denv_path, dark_root_dir=dark_root_dir)
                     except DarkError as e:
                         raise DarkRuntimeError(f"Ошибка в модуле '{module_name}' ({canonical_path}):\n{e}", line=line)
             elif typ == 'from_import':
