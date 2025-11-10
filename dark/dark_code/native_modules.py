@@ -82,9 +82,9 @@ NATIVE_MODULES = {
         'philosophy': lambda args, env: philosophy(args, env.get('dark_root_dir')),
         'history': lambda args, env: history(args, env.get('dark_root_dir')),
         'calculator': lambda args, env: calculator(args, env.get('dark_root_dir')),
-        'version': lambda args, env: version(args),
-        'docs': lambda args, env: docs(args),
-        'telegram': lambda args, env: telegram(args),
+        'version': lambda args, env: version(args, env.get('dark_root_dir')),
+        'docs': lambda args, env: docs(args, env.get('dark_root_dir')),
+        'telegram': lambda args, env: telegram(args, env.get('dark_root_dir')),
     },
     'file': {
         'open': native_file_open,
