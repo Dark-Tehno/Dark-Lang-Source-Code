@@ -1,4 +1,3 @@
-# calculator.dark
 import "os"
 
 function print_header(title) do
@@ -59,7 +58,7 @@ function run_calculator() do
     history = []
 
     while true do
-        print_header("Калькулятор на DarkLang")
+        print_header("Калькулятор на Dark.Lang")
         
         println("Выберите операцию:")
         for key in operations.keys() do

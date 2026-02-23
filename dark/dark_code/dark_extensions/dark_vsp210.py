@@ -8,15 +8,11 @@ def _run_internal_script(script_name, dark_root_dir):
     """Помощник для запуска внутренних скриптов .dark."""
     from dark_code.dark_lang import Parser, lex, run 
 
-    # Надежный способ определить, что код скомпилирован Nuitka.
-    # 'in globals()' проверяет, существует ли переменная __compiled__ в текущем модуле.
     IS_COMPILED = "__compiled__" in globals()
     if IS_COMPILED:
-        # Для скомпилированного приложения корень - это папка с .exe
         base_dir = python_os.path.dirname(sys.executable)
         file_path = python_os.path.join(base_dir, "code", f"{script_name}.dark")
     else:
-        # Для запуска из исходников, поднимаемся на уровень выше от папки dark_extensions
         base_dir = python_os.path.dirname(python_os.path.abspath(__file__))
         file_path = python_os.path.join(base_dir, '..', '..', "code", f"{script_name}.dark")
 
@@ -52,7 +48,7 @@ def calculator(args, dark_root_dir):
     _run_internal_script("calculator", dark_root_dir)
 
 def version(args, dark_root_dir):
-    from dark_code.__version__ import __version__
+    from dark_code.data import __version__
     return __version__
 
 def docs(args, dark_root_dir):

@@ -1,4 +1,5 @@
 import os
+import requests
 from dark_code.native_modules import NATIVE_MODULES
 from dark_code.lexer import lex
 from dark_code.parser import Parser
@@ -77,6 +78,37 @@ class StaticAnalyzer:
     def _get_or_analyze_module(self, module_name, script_dir, import_line):
         if module_name in NATIVE_MODULES:
             return {k: {'type': 'native_function'} for k in NATIVE_MODULES[module_name]}
+
+        if module_name.startswith('http://') or module_name.startswith('https://'):
+            if module_name in self.analyzed_files:
+                return self.analyzed_files[module_name]
+            
+
+            self.analyzed_files[module_name] = {} 
+
+            try:
+                response = requests.get(module_name)
+                response.raise_for_status()
+                src = response.text
+            except Exception as e:
+                self.add_error(f"не удалось загрузить удаленный модуль '{module_name}': {e}", import_line, self.current_file_path)
+                return None
+
+            try:
+                tokens = lex(src)
+                parser = Parser(tokens)
+                module_ast = parser.parse()
+                if parser.errors:
+                    for e in parser.errors:
+                        self.add_error(e.message, e.line, module_name, error_type='syntax')
+                    return {}
+
+                module_exports = self._analyze_module_ast(module_ast, module_name)
+                self.analyzed_files[module_name] = module_exports
+                return module_exports
+            except Exception as e:
+                self.add_error(f"не удалось проанализировать удаленный модуль '{module_name}': {e}", import_line, self.current_file_path)
+                return None
 
         pkg_init_path = os.path.join(script_dir, module_name, '__init__.py')
         py_file_path = os.path.join(script_dir, module_name + '.py')

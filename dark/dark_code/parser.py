@@ -13,7 +13,7 @@ class Parser:
     def eat(self, t=None):
         tok = self.cur()
         if t and tok.type != t:
-            raise DarkSyntaxError(f'Ожидаемый токен {t}, получен {tok.type}', line=tok.line, col=tok.col)
+            raise DarkSyntaxError(f'Expected {t}, got {tok.type}', line=tok.line, col=tok.col)
         self.i += 1
         return tok
 
@@ -71,6 +71,15 @@ class Parser:
             self.eat('RPAR')
             if self.cur().type == 'SEMI': self.eat('SEMI')
             return ('println', args, line)
+        if tok.type == 'ASSERT':
+            self.eat('ASSERT')
+            self.eat('LPAR')
+            condition = self.expr()
+            self.eat('COMMA')
+            message = self.expr()
+            self.eat('RPAR')
+            if self.cur().type == 'SEMI': self.eat('SEMI')
+            return ('assert', condition, message, line)
         if tok.type in ('IMPORT', 'USE'):
             self.eat(tok.type)
             module_name_tok = self.eat('STRING')
@@ -214,10 +223,40 @@ class Parser:
 
         node = self.expr()
 
-        if self.cur().type == 'ASSIGN':
+        if self.cur().type == 'COMMA':
+            targets = [node]
+            while self.cur().type == 'COMMA':
+                self.eat('COMMA')
+                targets.append(self.primary())
+            
             assign_tok = self.eat('ASSIGN')
-            rhs = self.expr()
+            
+            values = [self.expr()]
+            while self.cur().type == 'COMMA':
+                self.eat('COMMA')
+                if self.cur().type in ('SEMI', 'EOF', 'END', 'ELSE'): break
+                values.append(self.expr())
+
             if self.cur().type == 'SEMI': self.eat('SEMI')
+
+            for target in targets:
+                if target[0] not in ('var', 'member_access', 'index_access'):
+                    raise DarkSyntaxError("Invalid target for assignment", line=assign_tok.line)
+            
+            return ('multi_assign', targets, values, assign_tok.line)
+
+        elif self.cur().type == 'ASSIGN':
+            assign_tok = self.eat('ASSIGN')
+            
+            values = [self.expr()]
+            while self.cur().type == 'COMMA':
+                self.eat('COMMA')
+                if self.cur().type in ('SEMI', 'EOF', 'END', 'ELSE'): break
+                values.append(self.expr())
+
+            if self.cur().type == 'SEMI': self.eat('SEMI')
+
+            rhs = values[0] if len(values) == 1 else ('list', values)
 
             if node[0] == 'var':
                 return ('assign', node[1], rhs, assign_tok.line)
@@ -228,8 +267,8 @@ class Parser:
                 obj, member = node[1], node[2]
                 return ('member_assign', obj, member, rhs, assign_tok.line)
             else:
-                raise DarkSyntaxError("Недопустимая цель для назначения", line=assign_tok.line, col=assign_tok.col)
-        
+                raise DarkSyntaxError("Invalid target for assignment", line=assign_tok.line, col=assign_tok.col)
+
         if self.cur().type == 'SEMI':
             self.eat('SEMI')
         return ('expr', node, line) 
@@ -249,7 +288,7 @@ class Parser:
         while self.cur().type not in ('END', 'EOF'):
             if self.cur().type == 'SEMI': self.eat('SEMI'); continue
             if self.cur().type != 'FUNCTION':
-                raise DarkSyntaxError(f"Внутри тела класса разрешены только определения функций.", line=self.cur().line, col=self.cur().col)
+                raise DarkSyntaxError("Only function definitions are allowed inside a class body", line=self.cur().line, col=self.cur().col)
             methods.append(self.stmt())
         self.eat('END')
         if self.cur().type == 'SEMI': self.eat('SEMI')
@@ -307,7 +346,7 @@ class Parser:
                     member_name = tok.type.lower()
                     self.eat(tok.type)
                 else:
-                    raise DarkSyntaxError(f'Ожидал получить идентификатор после точки, но получил {tok.type}', line=tok.line, col=tok.col)
+                    raise DarkSyntaxError(f'Expected ID, got {tok.type}', line=tok.line, col=tok.col)
                 node = ('member_access', node, member_name, dot_tok.line)
             elif self.cur().type == 'LBRACKET':
                 lbracket_tok = self.eat('LBRACKET')
@@ -342,15 +381,19 @@ class Parser:
 
         if tok.type == 'STRING':
             self.eat('STRING')
-            return ('str', tok.value)
+            if isinstance(tok.value, tuple):
+                val, quote = tok.value
+            else:
+                val, quote = tok.value, '"'
+            return ('str', val, quote, tok.line)
         if tok.type == 'TRUE':
             self.eat('TRUE')
-            return ('bool', True)
+            return ('bool', True, tok.line)
         if tok.type == 'FALSE':
             self.eat('FALSE')
-            return ('bool', False)
+            return ('bool', False, tok.line)
         if tok.type == 'LBRACKET':
-            self.eat('LBRACKET')
+            lbracket_tok = self.eat('LBRACKET')
             elements = []
             
             while self.cur().type == 'SEMI': self.eat('SEMI')
@@ -366,9 +409,9 @@ class Parser:
             while self.cur().type == 'SEMI': self.eat('SEMI')
 
             self.eat('RBRACKET')
-            return ('list', elements)
+            return ('list', elements, lbracket_tok.line)
         if tok.type == 'LBRACE':
-            self.eat('LBRACE')
+            lbrace_tok = self.eat('LBRACE')
             pairs = []
 
             while self.cur().type == 'SEMI': self.eat('SEMI')
@@ -386,45 +429,53 @@ class Parser:
             while self.cur().type == 'SEMI': self.eat('SEMI')
 
             self.eat('RBRACE')
-            return ('dict', pairs)
+            return ('dict', pairs, lbrace_tok.line)
+        if tok.type == 'ENUMERATE':
+            self.eat('ENUMERATE')
+            self.eat('LPAR')
+            e = self.expr()
+            self.eat('RPAR')
+            return ('enumerate', e, tok.line)
         if tok.type == 'TO_FLOAT':
             self.eat('TO_FLOAT')
             self.eat('LPAR')
             e = self.expr()
             self.eat('RPAR')
-            return ('to_float', e)
+            return ('to_float', e, tok.line)
         if tok.type == 'TO_INT':
             self.eat('TO_INT')
             self.eat('LPAR')
             e = self.expr()
             self.eat('RPAR')
-            return ('to_int', e)
+            return ('to_int', e, tok.line)
         if tok.type == 'TO_STR':
             self.eat('TO_STR')
             self.eat('LPAR')
             e = self.expr()
             self.eat('RPAR')
-            return ('to_str', e)
+            return ('to_str', e, tok.line)
         if tok.type == 'TYPE':
             self.eat('TYPE')
             self.eat('LPAR')
             e = self.expr()
             self.eat('RPAR')
-            return ('type', e)
+            return ('type', e, tok.line)
         if tok.type == 'INPUT':
             self.eat('INPUT')
             self.eat('LPAR')
             self.eat('RPAR')
-            return ('input',)
+            return ('input', tok.line)
         if tok.type == 'NUMBER':
             self.eat('NUMBER')
-            return ('num', tok.value)
+            if isinstance(tok.value, float):
+                return ('float', tok.value, tok.line)
+            return ('num', tok.value, tok.line)
         if tok.type == 'ID':
             name = self.eat('ID').value
-            return ('var', name)
+            return ('var', name, tok.line)
         if tok.type == 'LPAR':
             self.eat('LPAR')
             e = self.expr()
             self.eat('RPAR')
             return e
-        raise DarkSyntaxError('Неожиданный токен в факторе', line=tok.line, col=tok.col)
+        raise DarkSyntaxError("Unexpected token in factor", line=tok.line, col=tok.col)

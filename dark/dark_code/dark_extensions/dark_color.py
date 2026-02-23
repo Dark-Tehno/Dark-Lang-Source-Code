@@ -33,6 +33,14 @@ def color(args, color_name):
         'dark_yellow': '\033[38;5;178m',
         'dark_cyan': '\033[38;5;30m',
         'dark_magenta': '\033[38;5;53m',
+
+        "dark_white": "\033[97m",
+        "dark_black": "\033[30m",
+        "dark_orange": "\033[38;5;208m",
+        "dark_purple": "\033[38;5;93m",
+        "dark_pink": "\033[38;5;213m",
+        "dark_brown": "\033[38;5;94m",
+        "light_gray": "\033[37m",
     }
     RESET_CODE = '\033[0m'
     
@@ -42,7 +50,7 @@ def color(args, color_name):
         raise DarkRuntimeError(f"Неподдерживаемый цвет: {color_name}")
 
 def rgb_color(args):
-    if len(args) != 4: raise TypeError("rgb() принимает 3 аргумента (r, g, b, text)")
+    if len(args) != 4: raise TypeError("rgb() принимает 4 аргумента (r, g, b, text)")
     r, g, b, text = args
     if not isinstance(r, int) or not isinstance(g, int) or not isinstance(b, int):
         raise TypeError("Компоненты RGB должны быть целыми числами")
@@ -56,7 +64,7 @@ def rgb_color(args):
     return f"\033[38;2;{r};{g};{b}m" + text + "\033[0m"
 
 def rgba_color(args):
-    if len(args) != 5: raise TypeError("rgba() принимает 4 аргумента (r, g, b, a, text)")
+    if len(args) != 5: raise TypeError("rgba() принимает 5 аргументов (r, g, b, a, text)")
     r, g, b, a, text = args
     if not all(isinstance(c, int) and 0 <= c <= 255 for c in [r, g, b]):
         raise TypeError("Компоненты RGB должны быть целыми числами от 0 до 255")
@@ -94,7 +102,7 @@ def hex_color(args):
     return f"\033[38;2;{r};{g};{b}m" + text + "\033[0m"
 
 def hsl_color(args):
-    if len(args) != 4: raise TypeError("функция hsl() принимает 3 аргумента(h, s, l, text)")
+    if len(args) != 4: raise TypeError("функция hsl() принимает 4 аргумента(h, s, l, text)")
     h, s, l, text = args
     if not all(isinstance(c, (int, float)) for c in [h, s, l]):
         raise TypeError("Компоненты HSL должны быть пронумерованы")

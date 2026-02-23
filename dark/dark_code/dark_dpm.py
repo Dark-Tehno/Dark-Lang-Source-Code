@@ -45,6 +45,15 @@ class DarkPackageManager:
                     print("Ошибка: файл 'requirements.txt' не найден.")
                     self.show_help()
                     sys.exit(1)
+            else:
+                if os.path.exists(command_args):
+                    with open(command_args, 'r') as f:
+                        for line in f:
+                            package_name = line.strip()
+                            if package_name:
+                                self.install_package(package_name)
+                else:
+                    print(f"Ошибка: файл '{command_args}' не найден.")
             for package_name in command_args:
                 self.install_package(package_name)
         elif command == 'uninstall':
@@ -57,7 +66,10 @@ class DarkPackageManager:
         elif command == 'list':
             self.list_packages()
         elif command == 'freeze':
-            self.freeze_packages()
+            if command_args:
+                self.freeze_packages(requirements=command_args[0])
+            else:
+                self.freeze_packages()
         elif command == 'doctor':
             self.doctor_check()
         elif command == 'update':
@@ -245,5 +257,7 @@ class DarkPackageManager:
   uninstall <имя_пакета>...     Удалить один или несколько установленных пакетов.
   list                          Показать список всех установленных пакетов.
   help                          Показать это сообщение.
-  freeze <фаил_зависимостей>    Сохранить список установленных пакетов в 'requirements.txt'.
+  freeze <фаил_зависимостей>    Сохранить список установленных пакетов в 'requirements.txt' или в указаном файле.
+  doctor                        Проверить целостность окружения.
+  update <имя_пакета>           Обновить пакет.
 """)

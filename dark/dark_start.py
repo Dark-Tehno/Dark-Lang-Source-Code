@@ -23,56 +23,11 @@ try:
 except ImportError:
     pass
 
-from dark_code import __version__
+from dark_code import data
 from dark_code.dark_lang import Parser, lex, run, DarkRuntimeError, StaticAnalyzer
+from dark_code.dark_exceptions import translate_syntax_error_message
 
 FROZEN_SCRIPT_CONTENT = None
-
-def _translate_syntax_error_message(message: str) -> str:
-    """
-    Преобразует техническое сообщение об ошибке синтаксиса в более понятное для пользователя.
-    Например, "Expected RPAR, got SEMI" -> "ожидалось ')'"
-    """
-    TOKEN_TRANSLATIONS = {
-        'RPAR': "')'",
-        'LPAR': "'('",
-        'RBRACKET': "']'",
-        'LBRACKET': "'['",
-        'RBRACE': "'}'",
-        'LBRACE': "'{'",
-        'SEMI': "';' или новая строка",
-        'COMMA': "','",
-        'ASSIGN': "'='",
-        'ID': 'идентификатор (имя переменной)',
-        'NUMBER': 'число',
-        'STRING': 'строка',
-        'EOF': 'конец файла',
-        'COLON': "':'",
-        'DOT': "'.'",
-        'THEN': "ключевое слово 'then'",
-        'DO': "ключевое слово 'do'",
-        'END': "ключевое слово 'end'",
-        'IN': "ключевое слово 'in'",
-        'RELOP': 'оператор сравнения (==, !=, <, > и т.д.)',
-        'OP': 'арифметический оператор (+, -, *, /)',
-    }
-
-    MESSAGE_TEMPLATES = {
-        "Invalid target for assignment": "недопустимая цель для присваивания. Присваивать значения можно только переменным, элементам списка или словаря.",
-        "Unexpected token in factor": "неожиданный синтаксис. Возможно, вы пропустили оператор или использовали неверный символ.",
-    }
-
-    if message in MESSAGE_TEMPLATES:
-        return MESSAGE_TEMPLATES[message]
-
-    match = re.match(r"^Expected (\w+), got (\w+)$", message)
-    if match:
-        expected, got = match.groups()
-        expected_str = TOKEN_TRANSLATIONS.get(expected, expected)
-        got_str = TOKEN_TRANSLATIONS.get(got, f"'{got}'")
-        return f"ожидалось {expected_str}, но было получено {got_str}"
-
-    return message
 
 def check_script(file_name):
     """
@@ -110,7 +65,7 @@ def check_script(file_name):
 
         if parser.errors:
             for e in parser.errors:
-                translated_message = _translate_syntax_error_message(e.message)
+                translated_message = translate_syntax_error_message(e.message)
                 print(f"Синтаксическая ошибка в файле {os.path.abspath(file_name)}:{e.line}:{e.column}: {translated_message}", file=sys.stderr)
             sys.exit(1)
         analyzer = StaticAnalyzer()
@@ -130,8 +85,6 @@ def check_script(file_name):
 IS_FROZEN = getattr(sys, 'frozen', False)
 
 if IS_FROZEN:
-    # В режиме --standalone, sys.executable находится внутри .dist папки.
-    # Нам нужна сама .dist папка как корень.
     DARK_ROOT_DIR = os.path.dirname(os.path.abspath(sys.executable))
 else:
     DARK_ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -154,36 +107,40 @@ def create_denv(env_name):
         os.makedirs(bin_dir)
         os.makedirs(extensions_dir)
 
-        if IS_FROZEN:
-            source_executable = sys.executable
-            target_executable_name = 'dark.exe' if sys.platform == 'win32' else 'dark'
-            target_executable = os.path.join(bin_dir, target_executable_name)
-            print(f"Копирование {source_executable} в {target_executable}...")
-            shutil.copy(source_executable, target_executable)
+        target_executable_name = 'dark.exe' if sys.platform == 'win32' else 'dark'
+        if sys.platform == 'win32':
+            release_dir = os.path.dirname(sys.executable)
+            files = os.listdir(release_dir)
+            for item in files:
+                src = os.path.join(release_dir, item)
+                dst = os.path.join(bin_dir, item)
+                if os.path.isdir(src):
+                    shutil.copytree(src, dst)
+                else:
+                    if item == 'dark_start.exe':
+                        dst = os.path.join(bin_dir, target_executable_name)
+                    shutil.copy(src, dst)
         else:
-            source_script = os.path.abspath(__file__)
-            target_script = os.path.join(bin_dir, 'dark_start.py')
-            print(f"Копирование {source_script} в {target_script}...")
-            shutil.copy(source_script, target_script)
-
-            dark_executable_content = f"""
-#!/bin/sh
-exec python "{os.path.join('$DARK_ENV', 'bin', 'dark_start.py')}" "$@"
-"""
-            with open(os.path.join(bin_dir, 'dark'), 'w', encoding='utf-8') as f:
-                f.write(dark_executable_content.strip())
-            os.chmod(os.path.join(bin_dir, 'dark'), 0o755)
+            release_dir = os.path.dirname(sys.executable)
+            files = os.listdir(release_dir)
+            for item in files:
+                src = os.path.join(release_dir, item)
+                dst = os.path.join(bin_dir, item)
+                if os.path.isdir(src):
+                    shutil.copytree(src, dst)
+                else:
+                    if item == 'dark':
+                        dst = os.path.join(bin_dir, target_executable_name)
+                    shutil.copy(src, dst)
 
 
         import datetime
         from datetime import timezone
 
-        type = 'frozen' if IS_FROZEN else 'source'
         creation_time = datetime.datetime.now(timezone.utc).isoformat()
 
         denv_cfg_content = f"""[denv]
-type = {type}
-dark_version = {__version__.__version__}
+dark_version = {data.__version__}
 denv_root = {os.path.abspath(bin_dir)}
 created_at = {creation_time}
 
@@ -193,7 +150,7 @@ script = script.dark
 
         with open(os.path.join(env_name, 'denv.cfg'), 'w') as f:
             f.write(denv_cfg_content.strip())
-        
+
         script_dark = """#!nocache
 println("Hello, Dark!")
 """
@@ -250,36 +207,38 @@ $env:PATH = "{os.path.abspath(bin_dir)};" + $env:PATH
         print(f"Произошла ошибка при создании окружения: {e}", file=sys.stderr)
         sys.exit(1)
 
-def execute_dark_code(code, source_name, use_cache=True, cache_dir = "__darkcache__", USE_WITH_PYTHON = False, USE_TKINTER = True, NOT_OUTPUT_DEVN = False):
+
+def execute_dark_code(code, source_name, use_cache=True, cache_dir="__darkcache__", USE_WITH_PYTHON=False, USE_TKINTER=True, NOT_OUTPUT_DEVN=False):
     """
     Выполняет код Dark из строки, управляя кэшированием и ошибками.
     """
     ast = None
     nocache = not use_cache
 
-    first_line = code.split('\n', 1)[0]
-    if first_line.startswith('#!'):
+    lines = code.split('\n')
+    
+    i = 0
+    while i < len(lines) and lines[i].startswith('#!'):
+        first_line = lines[i]
         if first_line.startswith('#!nocache'):
-            code = '\n'.join(code.split('\n')[1:])
-            return execute_dark_code(code, source_name, use_cache=False, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
-        elif first_line.startswith('#!cachedir "'):
-            cache_dir = first_line.split('"')[1]
-            code = '\n'.join(code.split('\n')[1:])
-            return execute_dark_code(code, source_name, use_cache=use_cache, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
+            use_cache = False
+            nocache = True
+        elif first_line.startswith('#!cachedir "') or first_line.startswith("#!cachedir '"):
+            if first_line.startswith("#!cachedir '"):
+                cache_dir = first_line.split("'")[1]
+            else:
+                cache_dir = first_line.split('"')[1]
         elif first_line.startswith('#!USE_WITH_PYTHON'):
             USE_WITH_PYTHON = True
-            code = '\n'.join(code.split('\n')[1:])
-            return execute_dark_code(code, source_name, use_cache=use_cache, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
         elif first_line.startswith('#!notkinter'):
             USE_TKINTER = False
-            code = '\n'.join(code.split('\n')[1:])
-            return execute_dark_code(code, source_name, use_cache=use_cache, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
         elif first_line.startswith('#!NOT_OUTPUT_DEVN'):
             NOT_OUTPUT_DEVN = True
-            code = '\n'.join(code.split('\n')[1:])
-            return execute_dark_code(code, source_name, use_cache=use_cache, cache_dir=cache_dir, USE_WITH_PYTHON=USE_WITH_PYTHON, USE_TKINTER=USE_TKINTER, NOT_OUTPUT_DEVN=NOT_OUTPUT_DEVN)
-            
-
+        i += 1
+    
+    filtered_lines = [line for line in lines]
+    filtered_code = '\n'.join(filtered_lines)
+    
     is_real_file = os.path.exists(source_name)
     if not nocache and is_real_file:
         base_name = os.path.basename(source_name)
@@ -292,14 +251,13 @@ def execute_dark_code(code, source_name, use_cache=True, cache_dir = "__darkcach
                 ast = None
 
     if ast is None:
-        tokens = lex(code)
+        tokens = lex(filtered_code)
         parser = Parser(tokens)
         ast = parser.parse()
         if parser.errors:
             first_error = parser.errors[0]
             first_error.filename = os.path.abspath(source_name)
-            first_error.message = _translate_syntax_error_message(first_error.message)
-            print(first_error)
+            print(first_error, file=sys.stderr)
             sys.exit(1)
 
         if not nocache and is_real_file:
@@ -388,27 +346,47 @@ def main():
         elif sys.argv[1] == '--parser':
             mode = 'parser'
             file_arg_index = 2
+        elif sys.argv[1] == '--compile':
+            mode = 'compile'
+            file_arg_index = 2
         elif sys.argv[1] == '--denv':
             mode = 'denv'
             file_arg_index = 2
         elif sys.argv[1] == '--version':
-            print(__version__.__version__)
+            print(data.__version__)
             sys.exit(0)
         elif sys.argv[1] == '--dpm':
             from dark_code.dark_dpm import DarkPackageManager
             dpm = DarkPackageManager(sys.argv[2:])
             dpm.run()
             sys.exit(0)
+        elif sys.argv[1] == '--repl':
+            from dark_code.dark_repl import DarkREPL
+            denv_path = os.environ.get('DARK_ENV')
+            repl = DarkREPL(DARK_ROOT_DIR, denv_path)
+            repl.start()
+            sys.exit(0)
+        elif sys.argv[1] == '--time':
+            import time
+            start_time = time.perf_counter()
+            run_script(sys.argv[2])
+            end_time = time.perf_counter()
+            print(f"\nВремя выполнения: {end_time - start_time:.4f} секунд")
+            sys.exit(0)
+
         elif sys.argv[1] == '--help':
             print("Использование: dark [опции] [файл]")
             print("Опции:")
+            print("  [файл]     Запустить указанный файл Dark.")
             print("  --check    Проверить синтаксис и семантику файла без выполнения.")
+            print("  --compile  Скомпилировать файл Dark в исполняемый файл.(В разработке)")
             print("  --denv     Создать виртуальное окружение 'denv'.")
             print("  --parser   Вывести токены и AST (для отладки парсера).")
             print("  --version  Показать версию Dark.")
             print("  --help     Показать это сообщение.")
-            print("  --dpm      Запустить менеджер пакетов Dark.")
-            print("  run        Запустить файл указанный в секции [project] файла 'denv.cfg'.")
+            print("  --repl     Запустить интерактивную консоль Dark.")
+            print("  --dpm      Запустить менеджер пакетов Dark.(Только в окружении denv)")
+            print("  run        Запустить файл указанный в секции [project] файла 'denv.cfg'.(только в окружении denv)")
             sys.exit(0)
         else:
             print(f"Неизвестный флаг: {sys.argv[1]}", file=sys.stderr)
@@ -429,6 +407,12 @@ def main():
 
     if mode == 'check':
         check_script(file_to_process)
+    elif mode == 'compile':
+        from dark_code.compiler.main import start_compilation
+        print(f"Начало компиляции файла: {file_to_process}", flush=True)
+        if not start_compilation(file_to_process, os.getcwd()):
+            print("Компиляция завершилась с ошибкой.", file=sys.stderr)
+            sys.exit(1)
     elif mode == 'denv':
         create_denv(file_to_process)
     elif mode == 'parser':

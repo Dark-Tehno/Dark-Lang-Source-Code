@@ -1,5 +1,6 @@
 import os
 import sys
+import requests
 from dark_code.native_modules import NATIVE_MODULES
 from dark_code.dark_exceptions import DarkRuntimeError, DarkError
 from dark_code.lexer import lex
@@ -51,7 +52,6 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
     if modules is None: modules = {}
     module_search_paths = [
         script_dir,
-        # Добавляем путь к стандартной библиотеке
         os.path.join(dark_root_dir, 'code'),
     ]
 
@@ -168,6 +168,14 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 return input()
             except (ValueError, EOFError):
                 return ""
+        if t == 'enumerate':
+            val = eval_expr(node[1], current_env)
+            if not isinstance(val, (list, str)):
+                raise DarkRuntimeError(f"объект типа '{type(val).__name__}' не является итерируемым", line=line)
+            result = []
+            for i in range(len(val)):
+                result.append([i, val[i]])
+            return result
         if t == 'to_int':
             val = eval_expr(node[1], current_env)
             try: return int(val)
@@ -188,10 +196,14 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
             if isinstance(val, list): return "list"
             if isinstance(val, dict): return "dict"
             if isinstance(val, Function): return "function"
+            if isinstance(val, DarkClass): return "class"
+            if isinstance(val, DarkInstance): return "instance"
+            if isinstance(val, BoundMethod): return "bound_method"
+            if isinstance(val, type(None)): return "none"
             return "unknown"
         if t == 'bool':
             return node[1]
-        if t == 'num':
+        if t in ('num', 'float'):
             return node[1]
         if t == 'str':
             return node[1]
@@ -279,6 +291,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                     '>=': '__ge__',
                     '==': '__eq__',
                     '!=': '__ne__',
+                    '<>': '__ne__',
                 }
                 if op in op_to_method:
                     method_name = op_to_method[op]
@@ -296,7 +309,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
             
             if op == '==':
                 return a == b
-            if op == '!=':
+            if op == '!=' or op == '<>':
                 return a != b
 
             
@@ -413,20 +426,53 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
             elif typ == 'println':
                 values = [_dark_obj_to_str(eval_expr(arg, current_env), current_env) for arg in s[1]]
                 print(*values)
+            elif typ == 'assert':
+                condition, message = s[1], s[2]
+                if not is_truthy(eval_expr(condition, current_env)):
+                    print(eval_expr(message, current_env) if message else "Ошибка")
             elif typ == 'import':
-                module_name = s[1]
+                module_name_node = s[1]
+                if isinstance(module_name_node, tuple):
+                    module_name = module_name_node[0]
+                else:
+                    module_name = module_name_node
+
                 if module_name in modules:
                     return 
 
                 if module_name in NATIVE_MODULES:
                     modules[module_name] = NATIVE_MODULES[module_name]
                     return
+                if module_name.startswith('http://') or module_name.startswith('https://'):
+                    if module_name in imported_files:
+                        return
+                    
+                    try:
+                        response = requests.get(module_name)
+                        response.raise_for_status()
+                        src = response.text
+                    except Exception as e:
+                        raise DarkRuntimeError(f"не удалось загрузить удаленный модуль '{module_name}': {e}", line=line)
+                    imported_files.add(module_name)
+                    
+                    try:
+                        tokens = lex(src)
+                        module_ast = Parser(tokens).parse()
+                        module_env = {}
+                        modules[module_name] = module_env
+                        module_env['__file__'] = module_name
+                        
+                        run(module_ast, env=module_env, source_name=module_name, script_dir=script_dir, imported_files=imported_files, modules=modules, use_with_python=use_with_python, denv_path=denv_path, dark_root_dir=dark_root_dir)
+                    except DarkError as e:
+                        raise DarkRuntimeError(f"Ошибка в удаленном модуле '{module_name}':\n{e}", line=line)
+                    return
 
-                
                 py_module_info = None
                 module_path = None 
 
                 for path in module_search_paths:
+                    if not os.path.isdir(path):
+                        continue
                     potential_pkg_path = os.path.join(path, module_name)
                     init_py_path = os.path.join(potential_pkg_path, '__init__.py')
                     if os.path.isdir(potential_pkg_path) and os.path.exists(init_py_path):
@@ -490,10 +536,15 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                     except DarkError as e:
                         raise DarkRuntimeError(f"Ошибка в модуле '{module_name}' ({canonical_path}):\n{e}", line=line)
             elif typ == 'from_import':
-                module_name, names, line = s[1], s[2], s[3]
+                module_name_node, names, line = s[1], s[2], s[3]
+                
+                if isinstance(module_name_node, tuple):
+                    module_name = module_name_node[0]
+                else:
+                    module_name = module_name_node
                 
                 was_already_loaded = module_name in modules
-                import_stmt_node = ('import', module_name, line)
+                import_stmt_node = ('import', module_name_node, line)
                 run_stmt(import_stmt_node, current_env)
 
                 if module_name not in modules:
@@ -550,6 +601,55 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 raise ReturnSignal(return_val)
             elif typ == 'assign':
                 current_env[s[1]] = eval_expr(s[2], current_env)
+            elif typ == 'multi_assign':
+                targets, value_nodes, line = s[1], s[2], s[3]
+
+                if len(value_nodes) == 1:
+                    values_to_unpack = eval_expr(value_nodes[0], current_env)
+                    if not isinstance(values_to_unpack, (list, str)):
+                        raise DarkRuntimeError(f"не удается распаковать неитерируемый объект типа '{type(values_to_unpack).__name__}'", line=line)
+                else:
+                    values_to_unpack = [eval_expr(v_node, current_env) for v_node in value_nodes]
+
+                if len(targets) != len(values_to_unpack):
+                    if len(targets) < len(values_to_unpack):
+                        raise DarkRuntimeError(f"слишком много значений для распаковки (ожидалось {len(targets)}, получено {len(values_to_unpack)})", line=line)
+                    else:
+                        raise DarkRuntimeError(f"недостаточно значений для распаковки (ожидалось {len(targets)}, получено {len(values_to_unpack)})", line=line)
+
+                for target_node, value in zip(targets, values_to_unpack):
+                    target_type = target_node[0]
+                    if target_type == 'var':
+                        var_name = target_node[1]
+                        current_env[var_name] = value
+                    elif target_type == 'index_access':
+                        collection_node, index_node, _ = target_node[1], target_node[2], target_node[3]
+                        collection = eval_expr(collection_node, current_env)
+                        index = eval_expr(index_node, current_env)
+                        if isinstance(collection, list):
+                            if not isinstance(index, int):
+                                raise DarkRuntimeError(f"индексы списка должны быть целыми числами, а не '{type(index).__name__}'", line=line)
+                            if index < -len(collection) or index >= len(collection):
+                                raise DarkRuntimeError(f"индекс {index} вне допустимого диапазона для присваивания в списке размером {len(collection)}", line=line)
+                            collection[index] = value
+                        elif isinstance(collection, dict):
+                            if not isinstance(index, (str, int, bool)):
+                                 raise DarkRuntimeError(f"недопустимый тип ключа для словаря: '{type(index).__name__}'", line=line)
+                            collection[index] = value
+                        else:
+                            raise DarkRuntimeError(f"объект типа '{type(collection).__name__}' не поддерживает присваивание по индексу", line=line)
+                    elif target_type == 'member_access':
+                        obj_node, member_name, _ = target_node[1], target_node[2], target_node[3]
+                        obj = eval_expr(obj_node, current_env)
+                        if not isinstance(obj, DarkInstance):
+                            raise DarkRuntimeError(f"Атрибуты могут быть назначены только экземплярам.", line=line)
+                        
+                        if member_name.startswith('__'):
+                            current_self = current_env.get('__current_self__')
+                            if current_self is not obj:
+                                raise DarkRuntimeError(f"не удается установить приватный атрибут '{member_name}' для объекта '{obj.klass.name}'", line=line)
+
+                        obj.fields[member_name] = value
             elif typ == 'member_assign':
                 obj_node, member_name, value_node, line = s[1], s[2], s[3], s[4]
                 obj = eval_expr(obj_node, current_env)
@@ -602,7 +702,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 iterable = eval_expr(iterable_expr, current_env)
                 
                 if not isinstance(iterable, (list, str, dict)):
-                     raise DarkRuntimeError(f"объект типа '{type(iterable).__name__}' не является итерируемым", line=line)
+                    raise DarkRuntimeError(f"объект типа '{type(iterable).__name__}' не является итерируемым", line=line)
 
                 items_to_iterate = iterable
                 if isinstance(iterable, dict):
@@ -644,7 +744,7 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                                 pass
                             else:
                                 pass
-        except (TypeError, NameError, RuntimeError, IndexError, KeyError, DarkRuntimeError) as e:
+        except (TypeError, NameError, RuntimeError, IndexError, KeyError, DarkRuntimeError, DarkError) as e:
             if isinstance(e, DarkRuntimeError):
                 e.line = e.line or line
                 raise e

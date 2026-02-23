@@ -1,4 +1,57 @@
 import os
+import re
+
+def translate_syntax_error_message(message: str) -> str:
+    """
+    Преобразует техническое сообщение об ошибке синтаксиса в более понятное для пользователя.
+    Например, "Expected RPAR, got SEMI" -> "ожидалось ')'"
+    """
+    TOKEN_TRANSLATIONS = {
+        'RPAR': "')'",
+        'LPAR': "'('",
+        'RBRACKET': "']'",
+        'LBRACKET': "'['",
+        'RBRACE': "'}'",
+        'LBRACE': "'{'",
+        'SEMI': "';' или новая строка",
+        'COMMA': "','",
+        'ASSIGN': "'='",
+        'ID': 'идентификатор (имя переменной)',
+        'NUMBER': 'число',
+        'STRING': 'строка',
+        'EOF': 'конец файла',
+        'COLON': "':'",
+        'DOT': "'.'",
+        'THEN': "ключевое слово 'then'",
+        'DO': "ключевое слово 'do'",
+        'END': "ключевое слово 'end'",
+        'IN': "ключевое слово 'in'",
+        'RELOP': 'оператор сравнения (==, !=, <, > и т.д.)',
+        'OP': 'арифметический оператор (+, -, *, /)',
+    }
+
+    MESSAGE_TEMPLATES = {
+        "Invalid target for assignment": "недопустимая цель для присваивания. Присваивать значения можно только переменным, элементам списка или словаря.",
+        "Unexpected token in factor": "неожиданный синтаксис. Возможно, вы пропустили оператор или использовали неверный символ.",
+        "Only function definitions are allowed inside a class body": "Внутри тела класса разрешены только определения функций.",
+    }
+
+    if message in MESSAGE_TEMPLATES:
+        return MESSAGE_TEMPLATES[message]
+
+    match = re.match(r"^Expected (\w+), got (\w+)$", message)
+    if match:
+        expected, got = match.groups()
+        expected_str = TOKEN_TRANSLATIONS.get(expected, expected)
+        got_str = TOKEN_TRANSLATIONS.get(got, f"'{got}'")
+        return f"ожидалось {expected_str}, но было получено {got_str}"
+
+    # Используем re.sub с границами слов для более безопасной замены
+    for token, translation in TOKEN_TRANSLATIONS.items():
+        message = re.sub(r'\b' + re.escape(token) + r'\b', translation, message)
+
+    return message
+
 
 class DarkError(Exception):
     """Base exception class for dark language errors."""
@@ -25,10 +78,15 @@ class DarkError(Exception):
             error_type = "Синтаксическая ошибка"
         elif error_type == "RuntimeError":
             error_type = "Ошибка выполнения"
+        elif error_type == "WetherError":
+            error_type = "Ошибка модуля Wether"
+        elif error_type == "CompileError":
+            error_type = "Ошибка компиляции"
+            
 
         C_ERROR = '\033[91m'
-        C_FILE = '\033[96m' 
-        C_LINE = '\033[93m' 
+        C_FILE = '\033[96m'
+        C_LINE = '\033[93m'
         C_CONTEXT = '\033[92m'
         C_RESET = '\033[0m'
 
@@ -41,16 +99,19 @@ class DarkError(Exception):
 
         loc_parts = []
         if self.filename:
-            loc_parts.append(f'Файл: "{C_FILE}{os.path.abspath(self.filename)}{C_RESET}"')
+            is_url = self.filename.startswith('http://') or self.filename.startswith('https://')
+            file_display_name = self.filename if is_url else os.path.abspath(self.filename)
+            loc_parts.append(f'Файл: "{C_FILE}{file_display_name}{C_RESET}"')
         if self.line:
             loc_parts.append(f"строка {C_LINE}{self.line}{C_RESET}")
         if self.col:
             loc_parts.append(f"позиция {C_LINE}{self.col}{C_RESET}")
-        
+
         loc_info = f"  [{', '.join(loc_parts)}]" if loc_parts else ""
 
         code_context = ""
-        if self.filename and self.line and os.path.exists(self.filename):
+        is_url = self.filename and (self.filename.startswith('http://') or self.filename.startswith('https://'))
+        if self.filename and self.line and not is_url and os.path.exists(self.filename):
             try:
                 with open(self.filename, 'r', encoding='utf-8') as f:
                     lines = f.readlines()
@@ -67,7 +128,8 @@ class DarkError(Exception):
             except (IOError, UnicodeDecodeError):
                 pass
 
-        return f"{traceback_str}{C_ERROR}{error_type}{C_RESET}: {self.message}\n{loc_info}{code_context}"
+        return f"{traceback_str}{C_ERROR}{error_type}{C_RESET}: {translate_syntax_error_message(self.message)}\n{loc_info}{code_context}"
 
 class DarkSyntaxError(DarkError): pass
+class DarkCompileError(DarkError): pass
 class DarkRuntimeError(DarkError): pass

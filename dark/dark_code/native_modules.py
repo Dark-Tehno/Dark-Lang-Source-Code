@@ -8,7 +8,8 @@ from dark_code.dark_extensions.dark_stdlib import *
 from dark_code.dark_extensions.dark_time import *
 from dark_code.dark_extensions.dark_vsp210 import *
 from dark_code.dark_extensions.dark_file import *
-
+from dark_code.dark_extensions.dark_weather import *
+from dark_code.dark_extensions.dark_docs import *
 
 def native_python_exec(args, env):
     """
@@ -82,9 +83,9 @@ NATIVE_MODULES = {
         'philosophy': lambda args, env: philosophy(args, env.get('dark_root_dir')),
         'history': lambda args, env: history(args, env.get('dark_root_dir')),
         'calculator': lambda args, env: calculator(args, env.get('dark_root_dir')),
-        'version': lambda args, env: version(args),
-        'docs': lambda args, env: docs(args),
-        'telegram': lambda args, env: telegram(args),
+        'version': lambda args, env: version(args, env.get('dark_root_dir')),
+        'docs': lambda args, env: docs(args, env.get('dark_root_dir')),
+        'telegram': lambda args, env: telegram(args, env.get('dark_root_dir')),
     },
     'file': {
         'open': native_file_open,
@@ -107,7 +108,6 @@ NATIVE_MODULES = {
         'rgba': rgba_color,
         'hex': hex_color,
         'hsl': hsl_color,
-
         'red': lambda args: color(args, 'red'),
         'green': lambda args: color(args, 'green'),
         'blue': lambda args: color(args, 'blue'),
@@ -134,5 +134,19 @@ NATIVE_MODULES = {
         'dark_yellow': lambda args: color(args, 'dark_yellow'),
         'dark_cyan': lambda args: color(args, 'dark_cyan'),
         'dark_magenta': lambda args: color(args, 'dark_magenta'),
+        'dark_white': lambda args: color(args, 'dark_white'),
+        'dark_black': lambda args: color(args, 'dark_black'),
+        'dark_orange': lambda args: color(args, 'dark_orange'),
+        'dark_purple': lambda args: color(args, 'dark_purple'), 
+        'dark_pink': lambda args: color(args, 'dark_pink'),
+        'dark_brown': lambda args: color(args, 'dark_brown'),
+        'light_gray': lambda args: color(args, 'light_gray'),
+    },
+    'weather': {
+        'initialization': native_weather_initialization,
+        'get_weather': native_weather_get_weather,
+    # },
+    # 'docs': {
+    #     'create': native_docs_create,
     }
 }
