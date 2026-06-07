@@ -6,6 +6,7 @@ import pickle
 import re
 import requests
 import configparser
+import DarkCustom
 
 
 try:
@@ -400,17 +401,41 @@ def main():
             print(f"Ошибка: Не указан файл для режима '{mode}'.", file=sys.stderr)
             sys.exit(1)
     else:
-        file_to_process = sys.argv[file_arg_index]
+        candidate = sys.argv[file_arg_index]
+        if candidate.startswith('--'):
+            default_script = os.path.join(base_dir, "script.dark")
+            if os.path.exists(default_script):
+                file_to_process = default_script
+            else:
+                print(f"Ошибка: Не указан файл для режима '{mode}'.", file=sys.stderr)
+                sys.exit(1)
+        else:
+            file_to_process = candidate
 
     if not os.path.isabs(file_to_process):
         file_to_process = os.path.join(os.getcwd(), file_to_process)
 
     if mode == 'check':
         check_script(file_to_process)
-    elif mode == 'compile':
-        from dark_code.compiler.main import start_compilation
+    elif mode == 'compile': 
+        from dark_code.compiler.run import start_compilation
         print(f"Начало компиляции файла: {file_to_process}", flush=True)
-        if not start_compilation(file_to_process, os.getcwd()):
+        out_dir = None
+        nuitka_flag = True
+        nuitka_args = None
+        for i, a in enumerate(sys.argv):
+            if a == '--out' and i + 1 < len(sys.argv):
+                out_dir = sys.argv[i + 1]
+            elif a.startswith('--out='):
+                out_dir = a.split('=', 1)[1]
+            elif a == '--nonuitka':
+                nuitka_flag = False
+            elif a.startswith('--nuitka-args='):
+                nuitka_args = a.split('=', 1)[1]
+            elif a == '--nuitka-args' and i + 1 < len(sys.argv):
+                nuitka_args = sys.argv[i + 1]
+
+        if not start_compilation(file_to_process, os.getcwd(), out_dir=out_dir, nuitka=nuitka_flag, nuitka_args=nuitka_args):
             print("Компиляция завершилась с ошибкой.", file=sys.stderr)
             sys.exit(1)
     elif mode == 'denv':

@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="ru"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="vsp210 with Dark.Tehno">
+    <meta name="description" content="Dark-Lang - Язык программирования Dark">
+    <title>Документация по языку Dark</title>
+    <link rel="stylesheet" href="https://vsp210.ru/static/css/main.css">
+    <link rel="stylesheet" href="https://vsp210.ru/static/css/portfolio/darklang.css">
+    <style>
+        body.sidebar-collapsed #content {
+            margin-left: 0;
+        }
+    </style>
+</head>
+<body>
+
+<button id="sidebar-toggle" title="Скрыть навигацию">«</button>
+
+<nav id="sidebar">
+    <h2>Навигация</h2>
+    <ul>
+        <li><a href="#intro">Введение</a></li>
+        <li><a href="#syntax">Синтаксис</a>
+            <ul>
+                <li><a href="#syntax-vars">Переменные</a></li>
+                <li><a href="#syntax-types">Типы данных</a></li>
+                <li><a href="#syntax-operators">Операторы</a></li>
+                <li><a href="#syntax-control">Управляющие конструкции</a></li>
+                <li><a href="#syntax-functions">Функции</a></li>
+                <li><a href="#syntax-try-except">Обработка ошибок</a></li>
+                <li><a href="#syntax-import">Импорт модулей</a></li>
+                <li><a href="#syntax-comments">Комментарии</a></li>
+                <li><a href="#syntax-directives">Директивы</a></li>
+            </ul>
+        </li>
+        <li><a href="#oop">ООП: Классы и Объекты</a>
+            <ul>
+                <li><a href="#oop-defining">Определение классов</a></li>
+                <li><a href="#oop-constructor">Конструктор</a></li>
+                <li><a href="#oop-instances">Создание объектов</a></li>
+                <li><a href="#oop-inheritance">Наследование</a></li>
+                <li><a href="#oop-special-methods">Специальные методы</a></li>
+                <li><a href="#oop-private">Приватные члены</a></li>
+            </ul>
+        </li>
+        <li><a href="#builtins">Встроенные функции</a></li>
+        <li><a href="#stdlib">Стандартная библиотека</a>
+            <ul>
+                <li><a href="#module-vsp210">Модуль vsp210(От создателя)</a></li>
+                <li><a href="#module-http">Модуль http</a></li>
+                <li><a href="#module-math">Модуль math</a></li>
+                <li><a href="#module-os">Модуль os</a></li>
+                <li><a href="#module-stdlib-lib">Модуль stdlib</a></li>
+                <li><a href="#module-time">Модуль time</a></li>
+                <li><a href="#module-file">Модуль file</a></li>
+                <li><a href="#module-gui">Модуль gui</a></li>
+                <li><a href="#module-color">Модуль color</a></li>
+            </ul>
+        </li>
+        <li><a href="#extensions">Python-расширения</a></li>
+        <li><a href="#dpm">Менеджер пакетов (dpm)</a>
+            <ul>
+                <li><a href="#dpm-usage">Использование</a></li>
+                <li><a href="#dpm-requirements">Файл зависимостей</a></li>
+                <li><a href="#dpm-publishing">Создание пакета</a></li>
+            </ul>
+        </li>
+        <li><a href="#launch-arguments">Аргументы запуска</a>
+            <ul>
+                <li><a href="#check">Аргумент --check</a></li>
+                <li><a href="#compile">Аргумент --compile</a></li>
+                <li><a href="#denv">Аргумент --denv</a></li>
+                <li><a href="#parser">Аргумент --parser</a></li>
+                <li><a href="#version">Аргумент --version</a></li>
+                <li><a href="#help">Аргумент --help</a></li>
+                <li><a href="#repl">Аргумент --repl</a></li>
+                <li><a href="#dpm-cli">Аргумент --dpm</a></li>
+                <li><a href="#run">Аргумент run</a></li>
+            </ul>
+        </li>
+    </ul>
+</nav>
+
+<main id="content">
+    <section id="intro">
+        <img src="https://vsp210.ru/static/img/image-not_bg.png" alt="Логотип Dark" class="intro-logo">
+        <h1>Язык программирования Dark</h1>
+        <p>Добро пожаловать в официальную документацию по языку программирования <strong>Dark</strong>.</p>
+        <p>Dark — это современный, динамический язык программирования, созданный для простоты и эффективности. Его синтаксис интуитивно понятен, что делает его отличным выбором как для начинающих, так и для опытных разработчиков. Эта документация поможет вам изучить основы языка, его синтаксис и стандартную библиотеку, чтобы вы могли начать создавать свои собственные программы.</p>
+        <p>Для удобной разработки на языке Dark рекомендуется использовать официальное <a href="https://marketplace.visualstudio.com/items?itemName=vsp210.dark-lang" target="_blank">расширение для Visual Studio Code</a>, которое предоставляет подсветку синтаксиса, автодополнение и другие полезные функции.</p>
+        <a href="https://vsp210.ru/media/static_files_uploads/Dark-Lang-setup-v1.3.0.exe">Скачать установщик Dark-1.3.0</a>
+        <br><br>
+        <a href="https://github.com/Dark-Tehno/Dark-Lang-Source-Code/">Исходный код</a>
+    </section>
+
+    <section id="syntax">
+        <h2>Основы синтаксиса</h2>
+        <h3 id="syntax-vars">Переменные</h3>
+        <p>Переменные объявляются с помощью оператора присваивания <code>=</code>. Имена переменных могут содержать буквы, цифры и знак подчеркивания, но не могут начинаться с цифры.</p>
+        <pre><code>my_variable = 10
+another_var = "Hello, Dark!"
+is_active = true</code></pre>
+
+        <h3 id="syntax-types">Типы данных</h3>
+        <ul>
+            <li><strong>Числа (Number):</strong> Целые и с плавающей точкой. Например: <code>42</code>, <code>3.14</code>.</li>
+            <li><strong>Строки (String):</strong> Текст в двойных или одинарных кавычках. Например: <code>"some text"</code>, можно и <code>`another text`</code>.</li>
+                <p>Строки поддерживают доступ к символам по индексу, как и списки.</p>
+            </li>
+            <li><strong>Булевы (Boolean):</strong> <code>true</code> или <code>false</code>.</li>
+            <li><strong>Списки (List):</strong> Упорядоченная коллекция элементов в квадратных скобках. Например: <code>[1, "two", 3.0]</code>.
+                <p>Доступ к элементам осуществляется по индексу (нумерация с 0):</p>
+                <pre><code>my_list = ["a", "b", "c"]
+println(my_list[1]) # Выведет "b"</code></pre>
+            </li>
+            <li><strong>Словари (Dictionary):</strong> Коллекция пар ключ-значение в фигурных скобках. Например: <code>{"key": "value", "age": 30}</code>.
+                <p>Доступ к значениям осуществляется по ключу, двумя способами:</p>
+                <pre><code>person = {"name": "Alex", "age": 30}
+
+# Через квадратные скобки
+println(person["name"]) # Выведет "Alex"
+
+# Через точку (если ключ - валидный идентификатор)
+println(person.age) # Выведет 30</code></pre>
+            </li>
+        </ul>
+
+        <h3 id="syntax-operators">Операторы</h3>
+        <p>Dark поддерживает стандартные арифметические (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>), сравнительные (<code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>) и логические операторы.</p>
+        <h4>Логические операторы (and / or / not)</h4>
+        <p>Для создания сложных условий используются логические операторы <code>and</code> (логическое И), <code>or</code> (логическое ИЛИ) и <code>not</code> (логическое НЕ).</p>
+        <pre><code># Пример с 'and'
+if age > 18 and has_license == true then
+    println("Можно водить машину")
+end
+
+# Пример с 'or'
+if is_weekend or is_holiday then
+    println("Время отдыхать!")
+end
+
+# Пример с 'not'
+is_ready = false
+if not is_ready then
+    println("Ещё не готово.")
+end
+
+# Пример not с операторами сравнения
+if not (a > b) then
+    println("a не больше b")
+end
+</code></pre>
+        <p>Операторы поддерживают "короткое замыкание" (short-circuiting). Например, в выражении <code>A and B</code>, если <code>A</code> ложно, то <code>B</code> не будет вычисляться.</p>
+
+        <h3 id="syntax-control">Управляющие конструкции</h3>
+        <h4>If-Then-Else</h4>
+        <p>Условный оператор. Блок <code>else</code> не является обязательным.</p>
+        <pre><code>if x &gt; 10 then
+    println("x is greater than 10")
+else
+    println("x is not greater than 10")
+end</code></pre>
+
+        <h4>While</h4>
+        <p>Цикл, который выполняется, пока условие истинно.</p>
+        <pre><code>i = 0
+while i &lt; 5 do
+    println(i)
+    i = i + 1
+end</code></pre>
+
+        <h4>For</h4>
+        <p>Цикл для итерации по элементам списка, строки или ключам словаря.</p>
+        <pre><code>my_list = [1, 2, 3]
+for item in my_list do
+    println(item)
+end</code></pre>
+
+        <h3 id="syntax-try-except">Обработка ошибок (try...except)</h3>
+        <p>Конструкция <code>try...except</code> позволяет перехватывать ошибки времени выполнения, предотвращая аварийное завершение программы.</p>
+        <pre><code>try do
+    # Код, который может вызвать ошибку
+except e do
+    # Код, который выполнится в случае ошибки.
+    # 'e' - это словарь с информацией об ошибке.
+end</code></pre>
+        <p>С версии 0.3.1 сообщения об ошибках стали более понятными и информативными. При возникновении ошибки времени выполнения, Dark не только выведет ее описание, но и покажет строку кода, где она произошла, с указателем на проблемное место.</p>
+        <p>Кроме того, при возникновении ошибки внутри функции или метода, Dark теперь выводит полную <strong>трассировку стека вызовов</strong>. Это помогает отследить, какая последовательность вызовов привела к ошибке, что значительно упрощает отладку.</p>
+        <p>Например, если одна функция вызывает другую, а во второй происходит ошибка, вы увидите всю цепочку:</p>
+        <pre><code>function inner_function() do
+    c = 10 / 0 # Ошибка здесь
+end
+
+function middle_function() do
+    inner_function() # Вызов, ведущий к ошибке
+end
+
+middle_function()
+</code></pre>
+        <p>Вывод в консоли будет выглядеть так:</p>
+        <pre><code>Трассировка вызовов (от последнего к первому):
+  Файл "D:\...\script.dark", строка 8, в функция 'middle_function'
+  Файл "D:\...\script.dark", строка 2, в функция 'inner_function'
+
+Ошибка выполнения: деление на ноль
+  [Файл: "D:\...\script.dark", строка 2, позиция 12]
+
+  2 |     c = 10 / 0 # Ошибка здесь
+    |            ^
+--------------------------------------------------------------------</code></pre>
+
+        <h4>Пример:</h4>
+        <pre><code>try do
+    result = 10 / 0
+except e do
+    println("Произошла ошибка: " + e["message"])
+end</code></pre>
+
+        <h3 id="syntax-import">Импорт модулей</h3>
+        <p>Для использования кода из других файлов (модулей) используется ключевое слово <code>import</code>. Путь к модулю указывается в двойных кавычках. Расширение <code>.dark</code> или <code>.py</code> указывать не нужно.</p>
+        <p>В качестве синонима <code>import</code> можно использовать <code>use</code>.</p>
+        <pre><code># Импортируем стандартный модуль os
+import "os"
+# или так:
+use "os"
+
+# Импортируем пользовательский модуль из файла my_module.dark
+import "my_module"
+
+# Используем функцию из импортированного модуля
+os.system("cls")
+my_module.my_function()
+</code></pre>
+        <p>Также можно импортировать конкретные имена (функции, переменные) из модуля, чтобы не писать каждый раз имя модуля. Для этого используется конструкция <code>from ... use ...</code>.</p>
+        <pre><code># В файле my_math.dark есть PI = 3.14 и функция square(x)
+from "my_math" use PI, square
+
+println(PI)       # Выведет 3.14
+println(square(5)) # Выведет 25
+</code></pre>
+        <p>Начиная с версии 1.2.0, Dark поддерживает импорт модулей напрямую из интернета. Это позволяет использовать библиотеки, размещенные на удаленных серверах, без необходимости их предварительной загрузки.</p>
+        <pre><code># Импорт конкретных имен из модуля, размещенного в интернете
+from "https://raw.githubusercontent.com/Dark-Tehno/Dark-Lang-Source-Code/refs/heads/main/example/script.dark" use PI
+
+println(PI)
+</code></pre>
+
+
+        <h3 id="syntax-functions">Функции</h3>
+        <p>Определение пользовательских функций.</p>
+        <pre><code>function add(a, b) do
+    return a + b
+end
+
+result = add(5, 3)
+println(result) # Выведет 8</code></pre><p>Функция может не возвращать значение. В этом случае можно использовать <code>return</code> для досрочного выхода из функции.</p><pre><code>function check_age(age) do
+    if age &lt; 18 then
+        println("Доступ запрещен.")
+        return # Досрочный выход из функции
+    end
+    println("Доступ разрешен.")
+end</code></pre>
+
+        <h3 id="syntax-comments">Комментарии</h3>
+        <p>Однострочные комментарии начинаются с символа <code>#</code>.</p>
+        <pre><code># Это комментарий. Он будет проигнорирован.
+variable = 1 # Это тоже комментарий.</code></pre>
+
+        <h3 id="syntax-directives">Директивы</h3>
+        <p>Если в начале фаила будет строка начинающаяся с символа <code>#!</code> - это даст информацию о объявлении директивы.</p>
+        <pre><code>#!nocache
+# Это директива, которая отключает кеширование для этого файла.
+# Полезно при разработке, чтобы изменения в файле сразу применялись.</code></pre><pre><code>#!USE_WITH_PYTHON
+# Эта директива включает интеграцию с Python, позволяя использовать модуль `python`.
+# Требуется для выполнения Python-кода внутри Dark-скрипта.
+python.exec('print("Hello from Python!")')
+
+# или версия с созданием переменных:
+python_code = """
+a = input("Enter something: ")
+print(f"You entered: {a}")
+def greet(name):
+    return f"Hello, {name}!"
+b = greet("World")
+"""
+vars = python.exec(python_code)
+println(vars['a'])
+println(vars['b'])
+</code></pre>
+    </section>
+
+    <section id="oop">
+        <h2>ООП: Классы и Объекты</h2>
+        <p>Dark поддерживает объектно-ориентированное программирование, позволяя создавать собственные типы данных с помощью классов. Это помогает структурировать сложный код, объединяя данные (атрибуты) и функции для работы с ними (методы) в единое целое.</p>
+
+        <h3 id="oop-defining">Определение классов</h3>
+        <p>Класс определяется с помощью ключевого слова <code>class</code>, за которым следует имя класса и блок <code>do...end</code>.</p>
+        <pre><code>class Animal do
+    # ... методы и атрибуты ...
+end</code></pre>
+
+        <h3 id="oop-constructor">Конструктор (__main__)</h3>
+        <p>Метод с именем <code>__main__</code> является конструктором. Он вызывается автоматически при создании нового объекта и используется для инициализации его начального состояния. Первый параметр конструктора (и любого другого метода) — это ссылка на сам создаваемый объект, по соглашению его часто называют <code>object</code>.</p>
+        <pre><code>class Animal do
+    function __main__(object, name) do
+        object.name = name # Создание и инициализация атрибута 'name'
+    end
+end</code></pre>
+
+        <h3 id="oop-instances">Создание объектов (экземпляров)</h3>
+        <p>Новый объект (экземпляр класса) создается вызовом имени класса как функции. Аргументы, переданные при вызове, передаются в конструктор <code>__main__</code> (за исключением первого аргумента <code>object</code>, который передается автоматически).</p>
+        <pre><code>my_dog = Animal("Рекс")
+println(my_dog.name) # Выведет "Рекс"</code></pre>
+
+        <h4>Атрибуты и методы</h4>
+        <p>Атрибуты — это переменные, принадлежащие объекту. Методы — это функции, принадлежащие классу, которые могут работать с данными объекта.</p>
+        *** End Patch
+        <p>Вы можете определить, как стандартные операторы (<code>+</code>, <code>*</code>, <code>==</code> и т.д.) будут работать с экземплярами вашего класса, определив соответствующие специальные методы.</p>
+        <p>Вот список поддерживаемых операторов и их методов:</p>
+        <table>
+            <thead><tr><th>Оператор</th><th>Имя метода</th><th>Описание</th></tr></thead>
+            <tbody>
+                <tr><td><code>+</code></td><td><code>__add__</code></td><td>Сложение</td></tr>
+                <tr><td><code>-</code></td><td><code>__sub__</code></td><td>Вычитание</td></tr>
+                <tr><td><code>*</code></td><td><code>__mul__</code></td><td>Умножение</td></tr>
+                <tr><td><code>/</code></td><td><code>__div__</code></td><td>Деление</td></tr>
+                <tr><td><code>==</code></td><td><code>__eq__</code></td><td>Равенство</td></tr>
+                <tr><td><code>!=</code></td><td><code>__ne__</code></td><td>Неравенство</td></tr>
+                <tr><td><code>&lt;</code></td><td><code>__lt__</code></td><td>Меньше чем</td></tr>
+                <tr><td><code>&gt;</code></td><td><code>__gt__</code></td><td>Больше чем</td></tr>
+                <tr><td><code>&lt;=</code></td><td><code>__le__</code></td><td>Меньше или равно</td></tr>
+                <tr><td><code>&gt;=</code></td><td><code>__ge__</code></td><td>Больше или равно</td></tr>
+            </tbody>
+        </table>
+        <br>
+        <pre><code>class Vector do
+    function __main__(object, x, y) do
+        object.x = x
+        object.y = y
+    end
+
+    function __add__(object, other) do
+        return Vector(object.x + other.x, object.y + other.y)
+    end
+end
+
+v1 = Vector(2, 3)
+v2 = Vector(10, 5)
+v3 = v1 + v2 # Здесь вызывается __add__
+# v3 будет объектом Vector с x=12, y=8
+</code></pre>
+
+        <h3 id="oop-private">Приватные члены (Инкапсуляция)</h3>
+        <p>Для сокрытия деталей реализации и защиты данных от случайного изменения используются приватные атрибуты и методы. В Dark, если имя атрибута или метода начинается с двух подчеркиваний (<code>__</code>), он считается приватным. Доступ к таким членам возможен только из методов того же класса.</p>
+        <pre><code>class BankAccount do
+    function __main__(object, owner, initial_balance) do
+        object.owner = owner
+        object.__balance = initial_balance # Приватный атрибут
+    end
+
+    # Публичный метод для получения баланса
+    function get_balance(object) do
+        return object.__balance # Доступ внутри класса разрешен
+    end
+end
+
+my_account = BankAccount("VSP", 1000)
+
+# Это сработает
+println(my_account.get_balance()) # Выведет 1000
+
+# А это вызовет ошибку, так как __balance - приватный
+# println(my_account.__balance)
+</code></pre>
+    </section>
+
+    <section id="builtins">
+        <h2>Встроенные функции</h2>
+        <div class="function-def">
+            <h4>print(value) / print()</h4>
+            <p>Выводит значение в консоль без переноса строки. Если вызван без аргументов, ничего не делает.</p>
+        </div>
+        <div class="function-def">
+            <h4>println(value) / println()</h4>
+            <p>Выводит значение в консоль и добавляет перенос строки. Если вызван без аргументов, просто добавляет перенос строки.</p>
+        </div>
+        <div class="function-def">
+            <h4>input()</h4>
+            <p>Читает строку текста от пользователя.</p>
+        </div>
+        <div class="function-def">
+            <h4>to_int(value)</h4>
+            <p>Преобразует значение в целое число. (Рекомендуется использовать конструкцию <code>try...except</code>)</p>
+        </div>
+        <div class="function-def">
+            <h4>to_str(value)</h4>
+            <p>Преобразует значение в строку.</p>
+        </div>
+        <div class="function-def">
+            <h4>to_float(value)</h4>
+            <p>Преобразует значение в число с плавающей точкой. (Рекомендуется использовать конструкцию <code>try...except</code>)</p>
+        </div>
+        <div class="function-def">
+            <h4>type(value)</h4>
+            <p>Возвращает тип значения (например, "string", "number").</p>
+        </div>
+    </section>
+
+    <section id="builtins-methods">
+        <h2>Встроенные методы</h2>
+        <p>Некоторые типы данных имеют встроенные методы, которые можно вызывать через точку. Методы — это функции, связанные с конкретным объектом.</p>
+        
+        <div class="module-section">
+            <h3>Методы строк (String)</h3>
+            <div class="function-def"><h4>"my string".len()</h4><p>Возвращает количество символов в строке.</p></div>
+            <div class="function-def"><h4>"my string".upper()</h4><p>Возвращает новую строку в верхнем регистре.</p></div>
+            <div class="function-def"><h4>"my string".lower()</h4><p>Возвращает новую строку в нижнем регистре.</p></div>
+            <div class="function-def"><h4>"  str  ".strip()</h4><p>Удаляет пробельные символы в начале и в конце строки.</p></div>
+            <div class="function-def"><h4>"string".startswith(prefix)</h4><p>Возвращает <code>true</code>, если строка начинается с <code>prefix</code>.</p></div>
+            <div class="function-def"><h4>"string".endswith(suffix)</h4><p>Возвращает <code>true</code>, если строка заканчивается на <code>suffix</code>.</p></div>
+            <div class="function-def"><h4>"string".find(substring)</h4><p>Ищет подстроку и возвращает индекс первого вхождения или -1, если не найдено.</p></div>
+            <div class="function-def"><h4>"string".replace(old, new)</h4><p>Заменяет все вхождения <code>old</code> на <code>new</code></p></div>
+            <div class="function-def"><h4>"string".split(separator)</h4><p>Разбивает строку на список строк по разделителю.</p></div>
+            <div class="function-def"><h4>"string".join(list)</h4><p>Объединяет список строк в одну строку с указанным разделителем.</p></div>
+        </div>
+
+        <div class="module-section">
+            <h3>Методы списков (List)</h3>
+            <div class="function-def"><h4>my_list.len()</h4><p>Возвращает количество элементов в списке.</p></div>
+            <div class="function-def"><h4>my_list.append(item)</h4><p>Добавляет элемент в конец списка.</p></div>
+            <div class="function-def"><h4>my_list.pop()</h4><p>Удаляет и возвращает последний элемент списка.</p></div>
+            <div class="function-def"><h4>my_list.insert(index, item)</h4><p>Вставляет элемент <code>item</code> на позицию <code>index</code>.</p></div>
+            <div class="function-def"><h4>my_list.remove(item)</h4><p>Удаляет первое вхождение элемента <code>item</code> из списка.</p></div>
+            <div class="function-def"><h4>my_list.index(item)</h4><p>Возвращает индекс первого вхождения элемента <code>item</code>.</p></div>
+            <div class="function-def"><h4>my_list.count(item)</h4><p>Возвращает количество вхождений элемента <code>item</code> в список.</p></div>
+            <div class="function-def"><h4>my_list.reverse()</h4><p>Обращает порядок элементов в списке.</p></div>
+            <div class="function-def"><h4>my_list.sort()</h4><p>Сортирует элементы списка на месте.</p></div>
+            <div class="function-def"><h4>my_list.clear()</h4><p>Удаляет все элементы из списка.</p></div>
+        </div>
+
+        <div class="module-section">
+            <h3>Методы словарей (Dictionary)</h3>
+            <div class="function-def"><h4>my_dict.len()</h4><p>Возвращает количество пар ключ-значение в словаре.</p></div>
+            <div class="function-def"><h4>my_dict.keys()</h4><p>Возвращает список всех ключей в словаре.</p></div>
+            <div class="function-def"><h4>my_dict.values()</h4><p>Возвращает список всех значений в словаре.</p></div>
+            <div class="function-def"><h4>my_dict.items()</h4><p>Возвращает список пар ключ-значение (в виде списков из двух элементов).</p></div>
+            <div class="function-def"><h4>my_dict.get(key, default)</h4><p>Возвращает значение по ключу или <code>default</code>, если ключ не найден.</p></div>
+            <div class="function-def"><h4>my_dict.pop(key, default)</h4><p>Удаляет ключ и возвращает его значение. Если ключ не найден, возвращает <code>default</code> или вызывает ошибку.</p></div>
+            <div class="function-def"><h4>my_dict.popitem()</h4><p>Удаляет и возвращает последнюю пару ключ-значение как список из двух элементов.</p></div>
+            <div class="function-def"><h4>my_dict.clear()</h4><p>Удаляет все элементы из словаря.</p></div>
+            <div class="function-def"><h4>my_dict.update(other_dict)</h4><p>Обновляет словарь, добавляя пары ключ-значение из <code>other_dict</code>.</p></div>
+            <div class="function-def"><h4>my_dict.setdefault(key, default)</h4><p>Возвращает значение ключа. Если ключ отсутствует, вставляет его со значением <code>default</code> и возвращает <code>default</code>.</p></div>
+        </div>
+    </section>
+
+    <section id="stdlib">
+        <h2>Стандартная библиотека</h2>
+        <p>Язык Dark поставляется с набором встроенных модулей для выполнения общих задач. Для использования функций модуля, импортируйте его: <code>import "os"</code>, а затем вызывайте функции через точку: <code>os.getcwd()</code>.</p>
+        
+        <div id="module-vsp210" class="module-section">
+            <h3>Модуль <code>vsp210</code></h3>
+            <div class="function-def">
+                <h4>vsp210.history()</h4>
+                <p>Возвращает исторю создателя языка Dark.</p>
+            </div>
+            <div class="function-def">
+                <h4>vsp210.philosophy()</h4>
+                <p>Возвращает философию языка Dark.(Секретная функция)</p>
+            </div>
+            <div class="function-def">
+                <h4>vsp210.calculator()</h4>
+                <p>Запускает калькулятор написаный для примера.</p>
+            </div>
+            <div class="function-def">
+                <h4>vsp210.version()</h4>
+                <p>Возвращает версию языка Dark.</p>
+            </div>
+            <div class="function-def">
+                <h4>vsp210.docs()</h4>
+                <p>Отправляет пользователя на страницу документации языка Dark.</p>
+            </div>
+            <div class="function-def">
+                <h4>vsp210.telegram()</h4>
+                <p>Отправляет пользователя в телеграм канал создателя языка Dark.</p>
+            </div>
+        </div>
+
+        <div id="module-http" class="module-section">
+            <h3>Модуль <code>http</code></h3>
+            <div class="function-def">
+                <h4>http.get(url)</h4>
+                <p>Выполняет HTTP GET-запрос и возвращает словарь с `status_code`, `headers` и `response`.</p>
+            </div>
+            <div class="function-def">
+                <h4>http.post(url, data)</h4>
+                <p>Выполняет HTTP POST-запрос с телом `data` (словарь) и возвращает словарь с `status_code`, `headers` и `response`.</p>
+            </div>
+            <div class="function-def">
+                <h4>http.json(response)</h4>
+                <p>Парсит строку JSON и возвращает словарь или список Dark. Если строка не является валидным JSON, будет вызвана ошибка.</p>
+            </div>
+            <div class="function-def">
+                <h4>http.text(response)</h4>
+                <p>Возвращает текст из ответа HTTP-запроса.</p>
+            </div>
+        </div>
+
+        <div id="module-os" class="module-section">
+            <h3>Модуль <code>os</code></h3>
+            <div class="function-def">
+                <h4>os.getcwd()</h4>
+                <p>Возвращает текущую рабочую директорию.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.path_exists(path)</h4>
+                <p>Проверяет, существует ли путь. Возвращает True или False.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.mkdir(path)</h4>
+                <p>Создает директорию.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.rmdir(path)</h4>
+                <p>Удаляет директорию.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.remove(path)</h4>
+                <p>Удаляет файл.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.rename(old, new)</h4>
+                <p>Переименовывает файл или директорию.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.listdir(path)</h4>
+                <p>Возвращает список содержимого директории.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.getsize(path)</h4>
+                <p>Возвращает размер файла.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.isdir(path)</h4>
+                <p>Проверяет, является ли путь директорией.</p>
+            </div>
+            <div class="function-def">
+                <h4>os.system(command)</h4>
+                <p>Выполняет системную команду (например, <code>"cls"</code> или <code>"clear"</code>).</p>
+            </div>
+            <div class="function-def">
+                <h4>os.exit(code)</h4>
+                <p>Завершает выполнение программы с указанным кодом выхода.</p>
+            </div>
+        </div>
+
+        <div id="module-math" class="module-section">
+            <h3>Модуль <code>math</code></h3>
+            <div class="function-def">
+                <h4>math.sqrt(number)</h4>
+                <p>Вычисляет квадратный корень числа.</p>
+            </div>
+            <div class="function-def">
+                <h4>math.pow(base, exp)</h4>
+                <p>Вычисляет `base` в степени `exp`.</p>
+            </div>
+            <div class="function-def">
+                <h4>math.floor(number)</h4>
+                <p>Возвращает наибольшее целое число, меньшее или равное `number`.</p>
+            </div>
+            <div class="function-def">
+                <h4>math.ceil(number)</h4>
+                <p>Возвращает наименьшее целое число, большее или равное `number`.</p>
+            </div>
+            <div class="function-def">
+                <h4>math.pi()</h4>
+                <p>Возвращает значение числа PI.</p>
+            </div>
+            <div class="function-def">
+                <h4>math.random()</h4>
+                <p>Возвращает случайное число с плавающей точкой от 0.0 до 1.0.</p>
+            </div>
+            <div class="function-def">
+                <h4>math.random_int(min, max)</h4>
+                <p>Возвращает случайное целое число в диапазоне от `min` до `max` включительно.</p>
+            </div>
+        </div>
+
+        <div id="module-stdlib-lib" class="module-section">
+            <h3>Модуль <code>stdlib</code></h3>
+            <div class="function-def">
+                <h4>stdlib.range(start, stop)</h4>
+                <p>Возвращает список чисел в диапазоне от `start` (включительно) до `stop` (не включительно).</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.list_contains(list, item)</h4>
+                <p>Проверяет, содержится ли `item` в `list`.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.list_join(list, separator)</h4>
+                <p>Объединяет элементы списка в строку с указанным разделителем.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.dict_get(dict, key, default)</h4>
+                <p>Получает значение из словаря по ключу, с возможностью указать значение по умолчанию.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.clamp(value, min, max)</h4>
+                <p>Ограничивает значение `value` между `min` и `max`.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.json_decode(json_string)</h4>
+                <p>Преобразует строку в формате JSON в словарь или список.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.read_file(path)</h4>
+                <p>Читает содержимое файла и возвращает его в виде строки.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.write_file(path, content)</h4>
+                <p>Записывает строку <code>content</code> в файл по указанному пути <code>path</code>.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.str_split(string, separator)</h4>
+                <p>Разделяет строку по указанному разделителю и возвращает список.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.str_upper(string)</h4>
+                <p>Преобразует строку в верхний регистр.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.str_lower(string)</h4>
+                <p>Преобразует строку в нижний регистр.</p>
+            </div>
+            <div class="function-def">
+                <h4>stdlib.str_replace(string, old, new)</h4>
+                <p>Заменяет все вхождения подстроки `old` на `new`.</p>
+            </div>
+        </div>
+
+        <div id="module-time" class="module-section">
+            <h3>Модуль <code>time</code></h3>
+            <div class="function-def">
+                <h4>time.time()</h4>
+                <p>Возвращает текущее время в виде Unix timestamp (число секунд с 1 января 1970 года).</p>
+            </div>
+            <div class="function-def">
+                <h4>time.sleep(seconds)</h4>
+                <p>Приостанавливает выполнение программы на указанное количество секунд.</p>
+            </div>
+        </div>
+
+        <div id="module-file" class="module-section">
+            <h3>Модуль <code>file</code></h3>
+            <p>Модуль для работы с файлами. Работает с одним файлом за раз. Сначала откройте файл с помощью <code>file.open()</code>, затем используйте функции чтения/записи и не забудьте закрыть его с помощью <code>file.close()</code>.</p>
+            <div class="function-def">
+                <h4>file.open(path, mode)</h4>
+                <p>Открывает файл. <code>mode</code> - это строка, например: <code>"r"</code> (чтение), <code>"w"</code> (запись), <code>"a"</code> (дозапись), <code>"r+"</code> (чтение и запись).</p>
+            </div>
+            <div class="function-def">
+                <h4>file.read()</h4>
+                <p>Читает все содержимое открытого файла и возвращает его как строку.</p>
+            </div>
+            <div class="function-def">
+                <h4>file.readline()</h4>
+                <p>Читает одну строку из файла.</p>
+            </div>
+            <div class="function-def">
+                <h4>file.readlines()</h4>
+                <p>Читает все строки из файла и возвращает их в виде списка.</p>
+            </div>
+            <div class="function-def">
+                <h4>file.write(content)</h4>
+                <p>Записывает строку <code>content</code> в открытый файл.</p>
+            </div>
+            <div class="function-def">
+                <h4>file.close()</h4>
+                <p>Закрывает ранее открытый файл.</p>
+            </div>
+        </div>
+
+        <div id="module-gui" class="module-section">
+            <h3>Модуль <code>gui</code></h3>
+            <p>Простой модуль для создания графических интерфейсов на основе Tkinter.</p>
+            <div class="function-def">
+                <h4>gui.create_window(title, width, height)</h4>
+                <p>Создает главное окно приложения с указанным заголовком и размерами.</p>
+            </div>
+            <div class="function-def"><h4>gui.create_label(text)</h4><p>Создает и размещает текстовую метку в окне.</p></div>
+            <div class="function-def"><h4>gui.create_button(text, command)</h4><p>Создает кнопку. <code>command</code> - это имя функции (в виде строки), которая будет вызвана при нажатии.</p></div>
+            <div class="function-def"><h4>gui.create_entry()</h4><p>Создает поле для ввода текста.</p></div>
+            <div class="function-def"><h4>gui.get_entry_value()</h4><p>Возвращает текст, введенный в поле ввода (созданное через <code>create_entry</code>).</p></div>
+            <div class="function-def"><h4>gui.set_label_text(text)</h4><p>Изменяет текст метки (созданной через <code>create_label</code>).</p></div>
+            <div class="function-def"><h4>gui.run_app()</h4><p>Запускает главный цикл обработки событий GUI. Эта функция должна вызываться в конце скрипта.</p></div>
+            <div class="function-def"><h4>gui.stop()</h4><p>Завершает главный цикл обработки событий GUI.</p></div>
+        </div>
+
+        <div id="module-color" class="module-section">
+            <h3>Модуль <code>color</code></h3>
+            <p>Модуль для вывода цветного текста в консоль. Поддерживает именованные цвета, а также форматы RGB, HEX и HSL.</p>
+            <div class="function-def"><h4>color.red(text)</h4><p>Возвращает текст, окрашенный в красный цвет.</p></div>
+            <div class="function-def"><h4>color.green(text)</h4><p>Возвращает текст, окрашенный в зеленый цвет.</p></div>
+            <div class="function-def"><h4>color.blue(text)</h4><p>Возвращает текст, окрашенный в синий цвет.</p></div>
+            <div class="function-def"><h4>color.yellow(text)</h4><p>Возвращает текст, окрашенный в желтый цвет.</p></div>
+            <div class="function-def"><h4>color.cyan(text)</h4><p>Возвращает текст, окрашенный в голубой цвет.</p></div>
+            <div class="function-def"><h4>color.magenta(text)</h4><p>Возвращает текст, окрашенный в пурпурный цвет.</p></div>
+            <div class="function-def"><h4>color.white(text)</h4><p>Возвращает текст, окрашенный в белый цвет.</p></div>
+            <div class="function-def"><h4>color.black(text)</h4><p>Возвращает текст, окрашенный в черный цвет.</p></div>
+            <div class="function-def"><h4>color.orange(text)</h4><p>Возвращает текст, окрашенный в оранжевый цвет.</p></div>
+            <div class="function-def"><h4>color.purple(text)</h4><p>Возвращает текст, окрашенный в фиолетовый цвет.</p></div>
+            <div class="function-def"><h4>color.pink(text)</h4><p>Возвращает текст, окрашенный в розовый цвет.</p></div>
+            <div class="function-def"><h4>color.brown(text)</h4><p>Возвращает текст, окрашенный в коричневый цвет.</p></div>
+            <div class="function-def"><h4>color.gray(text)</h4><p>Возвращает текст, окрашенный в серый цвет.</p></div>
+            <div class="function-def"><h4>color.light_gray(text)</h4><p>Возвращает текст, окрашенный в светло-серый цвет.</p></div>
+            <div class="function-def"><h4>color.dark_gray(text)</h4><p>Возвращает текст, окрашенный в темно-серый цвет.</p></div>
+            <div class="function-def"><h4>color.light_blue(text)</h4><p>Возвращает текст, окрашенный в светло-синий цвет.</p></div>
+            <div class="function-def"><h4>color.light_green(text)</h4><p>Возвращает текст, окрашенный в светло-зеленый цвет.</p></div>
+            <div class="function-def"><h4>color.light_cyan(text)</h4><p>Возвращает текст, окрашенный в светло-голубой цвет.</p></div>
+            <div class="function-def"><h4>color.light_red(text)</h4><p>Возвращает текст, окрашенный в светло-красный цвет.</p></div>
+            <div class="function-def"><h4>color.light_magenta(text)</h4><p>Возвращает текст, окрашенный в светло-пурпурный цвет.</p></div>
+            <div class="function-def"><h4>color.dark_red(text)</h4><p>Возвращает текст, окрашенный в темно-красный цвет.</p></div>
+            <div class="function-def"><h4>color.dark_green(text)</h4><p>Возвращает текст, окрашенный в темно-зеленый цвет.</p></div>
+            <div class="function-def"><h4>color.dark_blue(text)</h4><p>Возвращает текст, окрашенный в темно-синий цвет.</p></div>
+            <div class="function-def"><h4>color.dark_yellow(text)</h4><p>Возвращает текст, окрашенный в темно-желтый цвет.</p></div>
+            <div class="function-def"><h4>color.dark_cyan(text)</h4><p>Возвращает текст, окрашенный в темно-голубой цвет.</p></div>
+            <div class="function-def"><h4>color.dark_magenta(text)</h4><p>Возвращает текст, окрашенный в темно-пурпурный цвет.</p></div>
+            <hr>
+            <div class="function-def"><h4>color.rgb(r, g, b, text)</h4><p>Возвращает текст, окрашенный в указанный RGB цвет (компоненты от 0 до 255).</p></div>
+            <div class="function-def"><h4>color.rgba(r, g, b, a, text)</h4><p>Возвращает текст, окрашенный в указанный RGBA цвет. Альфа-канал `a` в большинстве терминалов не поддерживается и игнорируется.</p></div>
+            <div class="function-def"><h4>color.hex(hex_string, text)</h4><p>Возвращает текст, окрашенный в указанный HEX цвет (например, "#ff6496").</p></div>
+            <div class="function-def"><h4>color.hsl(h, s, l, text)</h4><p>Возвращает текст, окрашенный в указанный HSL цвет (h: 0-360, s: 0-100, l: 0-100).</p></div>
+        </div>
+
+        <div id="module-python" class="module-section">
+            <h3>Модуль <code>python</code></h3>
+            <p>Модуль для прямой интеграции с Python. Требует директиву <code>#!USE_WITH_PYTHON</code> в начале файла.</p>
+            <div class="function-def"><h4>python.exec(code_string)</h4><p>Выполняет код Python (переданный в виде строки) в текущем окружении Dark. Это позволяет обмениваться переменными между Dark и Python.</p></div>
+        </div>
+
+    </section>
+
+    <section id="extensions">
+        <h2>Python-расширения</h2>
+        <p>Одной из самых мощных возможностей Dark является способность подключать модули, написанные на Python. Это открывает доступ ко всей экосистеме библиотек Python.</p>
+        
+        <h4>Структура проекта</h4>
+        <p>Для использования расширений создайте папку <code>dark_extensions</code> в корне вашего проекта. В эту папку помещайте ваши <code>.py</code> файлы-модули.</p>
+        <pre><code>my_project/
+├── dark_extensions/
+│   └── math_ext.py
+├── my_script.dark
+└── ...
+</code></pre>
+
+        <h4>Создание модуля-расширения</h4>
+        <p>Каждый Python-файл расширения должен содержать функцию <code>get_module()</code>. Эта функция должна возвращать словарь, где ключи — это имена, которые будут доступны в Dark, а значения — это соответствующие функции или переменные из Python.</p>
+        <p>Все функции, предназначенные для вызова из Dark, должны принимать один аргумент — список (list) переданных параметров.</p>
+        
+        <h4>Пример: <code>dark_extensions/math_ext.py</code></h4>
+        <pre><code>import math
+
+# Функция принимает список аргументов от Dark
+def power(args):
+    if len(args) != 2:
+        raise TypeError("pow() expects 2 arguments")
+    return math.pow(args[0], args[1])
+
+# Эта функция будет вызвана интерпретатором Dark
+def get_module():
+    return {
+        "pi": math.pi,      # Экспорт переменной
+        "pow": power        # Экспорт функции
+    }
+</code></pre>
+
+        <h4>Использование в Dark</h4>
+        <p>Импортируйте ваше расширение как обычный модуль и используйте его содержимое.</p>
+        <pre><code>import "math_ext"
+
+println("Число PI из Python: " + math_ext.pi)
+
+# Вызываем функцию из Python, передавая аргументы
+# В Python они придут как список [2, 8]
+result = math_ext.pow(2, 8) 
+println("2 в степени 8 = " + result) # Выведет 256.0
+</code></pre>
+    </section>
+
+    <section id="dpm">
+        <h2>Менеджер пакетов (dpm)</h2>
+        <p>Начиная с версии 0.3.6, в Dark встроен менеджер пакетов <code>dpm</code> (Dark Package Manager). Он позволяет легко устанавливать, удалять и управлять Python-расширениями для ваших проектов. <code>dpm</code> работает только внутри активированного виртуального окружения <code>denv</code>.</p>
+
+        <h3 id="dpm-usage">Использование</h3>
+        <p>Все команды выполняются через флаг <code>--dpm</code>:</p>
+        <pre><code>dark --dpm &lt;команда&gt; [аргументы]</code></pre>
+
+        <h4>install</h4>
+        <p>Устанавливает один или несколько пакетов. <code>dpm</code> ищет на GitHub публичные репозитории с именем, начинающимся на <code>Dark_</code>.</p>
+        <pre><code># Установит пакет из репозитория с именем Dark_utils
+dark --dpm install utils</code></pre>
+
+        <h4>uninstall</h4>
+        <p>Удаляет пакет из вашего окружения.</p>
+        <pre><code>dark --dpm uninstall utils</code></pre>
+
+        <h4>list</h4>
+        <p>Показывает список всех пакетов, установленных в текущем <code>denv</code>.</p>
+        <pre><code>dark --dpm list</code></pre>
+
+        <h4>freeze</h4>
+        <p>Сохраняет список всех установленных пакетов в файл <code>requirements.txt</code>. Это стандартный способ зафиксировать зависимости проекта.</p>
+        <pre><code>dark --dpm freeze</code></pre>
+
+        <h3 id="dpm-requirements">Файл зависимостей (requirements.txt)</h3>
+        <p>Файл <code>requirements.txt</code> позволяет автоматически устанавливать все зависимости проекта одной командой. Это делает ваш проект переносимым и легко воспроизводимым на других машинах.</p>
+        <p>Создайте файл <code>requirements.txt</code> в корне вашего проекта:</p>
+        <pre><code># requirements.txt
+utils
+requests_wrapper
+</code></pre>
+        <p>Теперь, чтобы установить все пакеты из этого файла, выполните команду <code>install</code> без аргументов:</p>
+        <pre><code>dark --dpm install</code></pre>
+
+        <h3 id="dpm-publishing">Создание и публикация своего пакета</h3>
+        <p>Вы можете легко поделиться своим расширением с сообществом.</p>
+        <ol>
+            <li>
+                <strong>Создайте публичный репозиторий на GitHub.</strong> Его имя должно начинаться с префикса <code>Dark_</code>. Например, <code>Dark_my_super_package</code>.
+            </li>
+            <li>
+                <strong>Структура репозитория.</strong> Внутри репозитория должна быть папка, имя которой совпадает с именем вашего пакета (часть после <code>Dark_</code>). В этой папке должен находиться файл <code>__init__.py</code>.
+                <pre><code>Dark_my_super_package/  (корень репозитория)
+├── my_super_package/     (папка с кодом пакета)
+│   ├── __init__.py
+│   └── helpers.py
+└── README.md
+</code></pre>
+            </li>
+            <li>
+                <strong>Содержимое <code>__init__.py</code>.</strong> Этот файл должен содержать функцию <code>get_module(**kwargs)</code>, которая возвращает словарь с экспортируемыми именами.
+                <pre><code># Dark_my_super_package/my_super_package/__init__.py
+
+def my_func(args):
+    return "Hello from my package!"
+
+def get_module(**kwargs):
+    return {
+        "hello": my_func
+    }
+</code></pre>
+            </li>
+        </ol>
+        <p>После публикации такого репозитория любой пользователь сможет установить ваш пакет командой: <code>dark --dpm install my_super_package</code>.</p>
+    </section>
+    
+    
+    <section id="launch-arguments">
+        <h2>Аргументы запуска</h2>
+        <div class="argument-def">
+            <h3 id="check">Аргумент <code>--check</code></h3>
+            <p>Проверяет синтаксис указанного файла Dark без его выполнения. Полезно для быстрой проверки кода на ошибки.</p>
+            <pre><code>dark --check my_script.dark</code></pre>
+        </div>
+        <div class="argument-def">
+            <h3 id="compile">Аргумент <code>--compile</code> (экспериментально)</h3>
+            <p>Компилирует указанный файл Dark в набор Python-файлов и (опционно) в нативный исполняемый файл через <strong>Nuitka</strong>. Функция экспериментальная — используйте в тестовых задачах.</p>
+
+            <h4>Поддержка</h4>
+            <p>На данный момент компиляция поддерживает большинство конструкций языка Dark, но может не работать с некоторыми специфическими фичами. Рекомендуется тестировать с простыми скриптами.</p>
+
+            <h4>Новые флаги компиляции</h4>
+            <ul>
+                <li><strong><code>--out &lt;путь</code></strong>: задаёт каталог вывода компиляции. По умолчанию создаётся <code>dark_py_build</code> в рабочей директории. После генерации Python-кода вызывает <code>nuitka</code> для сборки standalone-исполняемого файла.</li>
+                <li><strong><code>--nonuitka</code></strong>: Не создаёт .exe фаил.</li>
+                <li><strong><code>--nuitka-args="..."</code></strong>: дополнительные аргументы для <code>nuitka</code> (например, оптимизации или исключения модулей).</li>
+            </ul>
+
+            <h4>Поведение сборки</h4>
+            <p>При компиляции создаётся структура в каталоге вывода:</p>
+            <ul>
+                <li><code>&lt;out_dir&gt;/py_dark_code/</code> — копия внутреннего рантайма `py_dark_code`, необходимая для выполнения сгенерированного кода.</li>
+                <li><code>&lt;out_dir&gt;/&lt;имя_скрипта&gt;.py</code> — сгенерированные Python-файлы.</li>
+                <li>При использовании <code>--nuitka</code> создаётся подпапка <code>nuitka_build</code> и итоговый дистрибутив в <code>nuitka_build/*.dist/</code>.</li>
+            </ul>
+
+            <h4>Пример использования</h4>
+            <pre><code># Сгенерировать Python-код в папку ./build_output
+dark --compile my_script.dark --out ./build_output
+
+# Сгенерировать и собрать через Nuitka (требуется установленный пакет nuitka)
+dark --compile my_script.dark --out ./build_output --nuitka-args="--onefile"
+            </code></pre>
+
+            <h4>Требования и заметки</h4>
+            <ul>
+                <li>Для сборки необходимо предварительно установить компилятор C, например MSVC на Windows.</li>
+                <li>Компилятор копирует внутрь каталога вывода локальную реализацию рантайма `py_dark_code` — это делает сборку переносимой.</li>
+                <li>Команды запуска внешних инструментов вызываются с абсолютными путями, чтобы избежать проблем с текущей рабочей директорией.</li>
+                <li>Компилятор выводит индикатор прогресса при копировании и записи файлов.</li>
+            </ul>
+        </div>
+        <div class="argument-def">
+            <h3 id="denv">Аргумент <code>--denv</code></h3>
+            <p>Используется для управления виртуальными окружениями Dark (Dark Environment). Виртуальные окружения позволяют изолировать зависимости проектов.</p>
+            <pre><code># Создать новое виртуальное окружение в текущей директории
+dark --denv denv
+
+# Активировать существующее виртуальное окружение
+source denv/bin/activate
+
+# Деактивировать виртуальное окружение
+deactivate
+</code></pre>
+        </div>
+        <div class="argument-def">
+            <h3 id="parser">Аргумент <code>--parser</code></h3>
+            <p>Запускает парсер Dark для указанного файла и выводит его абстрактное синтаксическое дерево (AST) в консоль. Полезно для отладки и понимания, как Dark интерпретирует ваш код.</p>
+            <pre><code>dark --parser my_script.dark</code></pre>
+        </div>
+        <div class="argument-def">
+            <h3 id="version">Аргумент <code>--version</code></h3>
+            <p>Выводит текущую версию интерпретатора Dark.</p>
+            <pre><code>dark --version</code></pre>
+        </div>
+        <div class="argument-def">
+            <h3 id="help">Аргумент <code>--help</code></h3>
+            <p>Выводит справочную информацию по использованию интерпретатора Dark и его аргументов.</p>
+            <pre><code>dark --help</code></pre>
+        </div>
+        <div class="argument-def">
+            <h3 id="repl">Аргумент <code>--repl</code></h3>
+            <p>Запускает интерактивную консоль Dark (Read-Eval-Print Loop), где вы можете вводить и выполнять код построчно.</p>
+            <pre><code>dark --repl</code></pre>
+        </div>
+        <div class="argument-def">
+            <h3 id="dpm-cli">Аргумент <code>--dpm</code></h3>
+            <p>Запускает менеджер пакетов Dark (dpm). Используется для установки, удаления и управления Python-расширениями. Подробнее см. раздел <a href="#dpm">Менеджер пакетов (dpm)</a>.</p>
+            <pre><code>dark --dpm install my_package</code></pre>
+        </div>
+        <div class="argument-def">
+            <h3 id="run">Аргумент <code>run</code></h3>
+            <p>Запускает файл, указанный в секции <code>[project]</code> файла <code>denv.cfg</code>. Работает только внутри активированного виртуального окружения <code>denv</code>.</p>
+            <pre><code>dark run</code></pre>
+        </div>
+
+    </section>
+
+</main>
+
+<div id="overlay"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const body = document.body;
+        const toggleBtn = document.getElementById('sidebar-toggle');
+        const overlay = document.getElementById('overlay');
+        const navLinks = document.querySelectorAll('#sidebar a[href^="#"]');
+        const isMobile = window.matchMedia("(max-width: 850px)");
+
+
+        function updateButton() {
+            const isCollapsed = body.classList.contains('sidebar-collapsed');
+            if (isMobile.matches) {
+                toggleBtn.innerHTML = isCollapsed ? '☰' : '×';
+                toggleBtn.title = isCollapsed ? 'Показать навигацию' : 'Скрыть навигацию';
+            } else {
+                toggleBtn.innerHTML = isCollapsed ? '»' : '«';
+                toggleBtn.title = isCollapsed ? 'Показать навигацию' : 'Скрыть навигацию';
+            }
+        }
+
+        function closeSidebar() {
+            if (!body.classList.contains('sidebar-collapsed')) {
+                body.classList.add('sidebar-collapsed');
+                updateButton();
+            }
+        }
+
+        function toggleSidebar() {
+            body.classList.toggle('sidebar-collapsed');
+            updateButton();
+        }
+
+        function setupLayout() {
+            if (isMobile.matches) {
+                body.classList.add('sidebar-collapsed');
+            } else {
+                body.classList.remove('sidebar-collapsed');
+            }
+            updateButton();
+        }
+
+        toggleBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', closeSidebar);
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (isMobile.matches) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        isMobile.addEventListener('change', setupLayout);
+
+        setupLayout();
+
+        const sections = new Map();
+        navLinks.forEach(link => {
+            const section = document.querySelector(link.getAttribute('href'));
+            if (section) { sections.set(section, link); }
+        });
+
+        const onScroll = () => {
+            const scrollPosition = window.scrollY;
+            const topOffset = 150;
+            let activeSection = null;
+
+            sections.forEach((link, section) => {
+                if (section.offsetTop <= scrollPosition + topOffset) { activeSection = section; }
+            });
+
+            navLinks.forEach(link => link.classList.remove('active'));
+
+            if (activeSection) {
+                const activeLink = sections.get(activeSection);
+                if (activeLink) { activeLink.classList.add('active'); }
+            }
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+
+        document.querySelectorAll('pre').forEach(preElement => {
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-button';
+            copyButton.innerText = 'Копировать';
+            copyButton.title = 'Копировать в буфер обмена';
+            preElement.appendChild(copyButton);
+
+            copyButton.addEventListener('click', () => {
+                const codeElement = preElement.querySelector('code');
+                if (!codeElement) return;
+                const textToCopy = codeElement.innerText;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    copyButton.innerText = 'Скопировано!';
+                    setTimeout(() => { copyButton.innerText = 'Копировать'; }, 2000);
+                }).catch(err => {
+                    console.error('Не удалось скопировать текст: ', err);
+                    copyButton.innerText = 'Ошибка';
+                    setTimeout(() => { copyButton.innerText = 'Копировать'; }, 2000);
+                });
+            });
+        });
+    });
+</script>
+
+</body>
+
+</html>

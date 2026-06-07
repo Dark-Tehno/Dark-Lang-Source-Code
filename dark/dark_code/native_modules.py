@@ -1,5 +1,4 @@
 import random as python_random
-from dark_code.dark_extensions.gui import *
 from dark_code.dark_extensions.dark_color import *
 from dark_code.dark_extensions.dark_http import *
 from dark_code.dark_extensions.dark_math import *
@@ -96,12 +95,6 @@ NATIVE_MODULES = {
         'readlines': native_file_readlines,
         'seek': native_file_seek,
     },
-    'gui': {
-        'create_window': native_gui_create_window, 'create_label': native_gui_create_label,
-        'create_button': native_gui_create_button, 'create_entry': native_gui_create_entry,
-        'set_text': native_gui_set_text, 'get_text': native_gui_get_text,
-        'check_events': native_gui_check_events, 'stop': native_gui_stop,
-    },
     
     'color': {
         'rgb': rgb_color,
@@ -145,8 +138,5 @@ NATIVE_MODULES = {
     'weather': {
         'initialization': native_weather_initialization,
         'get_weather': native_weather_get_weather,
-    # },
-    # 'docs': {
-    #     'create': native_docs_create,
     }
 }

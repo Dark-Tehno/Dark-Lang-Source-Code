@@ -16,7 +16,6 @@ python -m nuitka ^
     --output-dir=%BUILD_DIR% ^
     --enable-plugin=tk-inter ^
     --include-data-dir=code=code ^
-    --include-data-dir=dark_code/compiler/NIM_CODE=dark_code/compiler/NIM_CODE ^
     --include-data-dir=assets=assets ^
     --msvc=latest ^
     --windows-icon-from-ico=assets/icon.png ^

@@ -110,8 +110,6 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                 try:
                     bound_str_method = BoundMethod(val, str_method)
                     result = call_dark_function(bound_str_method.function, [bound_str_method.instance], self_instance=bound_str_method.instance)
-                    if not isinstance(result, str):
-                        raise DarkRuntimeError(f"Метод __str__ должен возвращать строку, а не {type(result).__name__}")
                     return result
                 except DarkRuntimeError as e:
                     raise e

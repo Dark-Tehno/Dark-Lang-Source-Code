@@ -11,8 +11,9 @@
 
   <p>
     <a href="https://vsp210.ru/dark-lang/"><img src="https://img.shields.io/badge/version-1.2.0-blue.svg" alt="Version"></a>
-    <img src="https://img.shields.io/badge/language-Python-blue.svg" alt="Language">
+    <img src="https://img.shields.io/badge/language-Python-blue.svg" alt="Python language">
     <img src="https://img.shields.io/github/license/Dark-Tehno/Dark-Lang-Source-Code" alt="License">
+
   </p>
 </div>
 

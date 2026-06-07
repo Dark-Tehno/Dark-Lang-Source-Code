@@ -27,7 +27,6 @@ python3 -m nuitka \
     --output-filename="$EXECUTABLE_NAME" \
     --enable-plugin=tk-inter \
     --include-data-dir=code=code \
-    --include-data-dir=dark_code/compiler/NIM_CODE=dark_code/compiler/NIM_CODE \
     --include-data-dir=assets=assets \
     dark_start.py 
 
