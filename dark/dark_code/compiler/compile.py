@@ -1,3 +1,16 @@
+# Copyright 2026 Dark.Tehno
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 from dark_code.dark_lang import lex, Parser
 from dark_code.dark_exceptions import translate_syntax_error_message
 import os
@@ -39,6 +52,71 @@ logicalop_templates = {
 
 files = {}
 
+def _interpolated_str_to_code(raw, imported_native_modules=None):
+    """
+    Транспилирует backtick-строку Dark с подстановками '{expr}' в Python-выражение
+    вида ("литерал" + str(выражение) + "литерал" + ...). '{{' и '}}' — экранированные
+    литеральные скобки, как и в интерпретаторе.
+    """
+    if imported_native_modules is None:
+        imported_native_modules = {}
+    parts = []
+    literal = []
+    i, n = 0, len(raw)
+
+    def flush_literal():
+        if literal:
+            parts.append(repr(''.join(literal)))
+            literal.clear()
+
+    while i < n:
+        ch = raw[i]
+        if ch == '{' and i + 1 < n and raw[i + 1] == '{':
+            literal.append('{'); i += 2; continue
+        if ch == '}' and i + 1 < n and raw[i + 1] == '}':
+            literal.append('}'); i += 2; continue
+        if ch == '{':
+            depth = 1
+            j = i + 1
+            in_quote = None
+            while j < n and depth > 0:
+                c = raw[j]
+                if in_quote:
+                    if c == '\\' and j + 1 < n:
+                        j += 2
+                        continue
+                    if c == in_quote:
+                        in_quote = None
+                elif c in ('"', "'"):
+                    in_quote = c
+                elif c == '{':
+                    depth += 1
+                elif c == '}':
+                    depth -= 1
+                    if depth == 0:
+                        break
+                j += 1
+            if depth != 0:
+                raise SyntaxError("незакрытая '{' в строке с подстановкой")
+            expr_text = raw[i + 1:j]
+            if not expr_text.strip():
+                raise SyntaxError("пустые фигурные скобки '{}' в строке с подстановкой")
+            flush_literal()
+            expr_ast = Parser(lex(expr_text)).expr()
+            expr_code = _expression_to_code(expr_ast, imported_native_modules)
+            parts.append(f"str({expr_code})")
+            i = j + 1
+            continue
+        if ch == '}':
+            raise SyntaxError("одиночная '}' без пары в строке с подстановкой")
+        literal.append(ch)
+        i += 1
+    flush_literal()
+    if not parts:
+        return '""'
+    return "(" + " + ".join(parts) + ")"
+
+
 def _expression_to_code(node, imported_native_modules=None):
     """
     Рекурсивно преобразует узел AST выражения в строку Python кода.
@@ -77,7 +155,11 @@ def _expression_to_code(node, imported_native_modules=None):
         args_code = _params_to_var(args, imported_native_modules)
         return f"{callee_code}({args_code})"
     elif node_type == "str":
-        processed_string = node[1].replace("\n", "\\n")
+        raw_val = node[1]
+        quote = node[2] if len(node) > 2 else '"'
+        if quote == '`' and '{' in raw_val:
+            return _interpolated_str_to_code(raw_val, imported_native_modules)
+        processed_string = raw_val.replace("\n", "\\n")
         return f'"{processed_string}"'
     elif node_type == "bool":
         return str(node[1])
@@ -363,8 +445,16 @@ def _dark_type(x):
         files[os.path.splitext(os.path.basename(source_dark_file))[0]] = dark_code
 
         try:
-            compiler_dir = os.path.dirname(__file__)
-            src_py_dir = os.path.join(compiler_dir, 'py_dark_code')
+            # Определяем путь к стандартной библиотеке py_dark_code
+            # В режиме разработки ищем относительно текущего файла
+            base_path = os.path.dirname(__file__) # compiler/ — здесь реально лежит py_dark_code
+            
+            # Если приложение "заморожено" (скомпилировано в exe),
+            # стандартная библиотека должна быть вложена Nuitka.
+            if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                base_path = sys._MEIPASS
+
+            src_py_dir = os.path.join(base_path, 'py_dark_code')
             output_root = out_dir if out_dir else os.path.join(working_dir, 'dark_py_build')
             dest_py_dir = os.path.join(output_root, 'py_dark_code')
 
@@ -373,7 +463,7 @@ def _dark_type(x):
             os.makedirs(output_root, exist_ok=True)
 
             if os.path.exists(src_py_dir):
-                shutil.copytree(src_py_dir, dest_py_dir)
+                shutil.copytree(src_py_dir, dest_py_dir, dirs_exist_ok=True)
             else:
                 os.makedirs(dest_py_dir, exist_ok=True)
 
@@ -390,45 +480,104 @@ def _dark_type(x):
             print(f"Сборка создана: {os.path.abspath(output_root)}", flush=True)
 
             if nuitka:
-                try:
-                    import subprocess
+                # Импортируем Nuitka напрямую. Убедитесь, что Nuitka включена
+                # в зависимости при сборке вашего dark_start.exe.                
+                nuitka_out = os.path.join(output_root, 'nuitka_build')
+                abs_nuitka_out = os.path.abspath(nuitka_out)
+                if os.path.exists(abs_nuitka_out):
+                    shutil.rmtree(abs_nuitka_out)
+                os.makedirs(abs_nuitka_out, exist_ok=True)
 
-                    entry_name = os.path.splitext(os.path.basename(source_dark_file))[0] + '.py'
-                    entry_path = os.path.join(output_root, entry_name)
-                    if not os.path.exists(entry_path):
-                        print(f"Ошибка: точка входа для Nuitka не найдена: {entry_path}", file=sys.stderr)
-                        return False
-
-                    nuitka_out = os.path.join(output_root, 'nuitka_build')
-                    abs_nuitka_out = os.path.abspath(nuitka_out)
-                    if os.path.exists(abs_nuitka_out):
-                        shutil.rmtree(abs_nuitka_out)
-                    os.makedirs(abs_nuitka_out, exist_ok=True)
-
-                    abs_entry = os.path.abspath(entry_path)
-
-                    cmd = [sys.executable, '-m', 'nuitka', '--enable-plugin=tk-inter', '--standalone', f'--output-dir={abs_nuitka_out}', abs_entry]
-                    if nuitka_args:
-                        if isinstance(nuitka_args, str):
-                            extra = nuitka_args.split()
-                        else:
-                            extra = list(nuitka_args)
-                        cmd.extend(extra)
-
-                    print(f"Запуск Nuitka: {' '.join(cmd)}", flush=True)
-                    sys.stdout.flush()
-                    res = subprocess.run(cmd)
-                    if res.returncode != 0:
-                        print(f"Nuitka завершился с кодом {res.returncode}", file=sys.stderr)
-                        return False
-                    print(f"Nuitka сборка завершена: {os.path.abspath(nuitka_out)}")
-                except Exception as e:
-                    print(f"Ошибка при запуске Nuitka: {e}", file=sys.stderr)
+                entry_name = os.path.splitext(os.path.basename(source_dark_file))[0] + '.py'
+                entry_path = os.path.join(output_root, entry_name)
+                if not os.path.exists(entry_path):
+                    print(f"Ошибка: точка входа для Nuitka не найдена: {entry_path}", file=sys.stderr)
                     return False
+                abs_entry = os.path.abspath(entry_path)
+                abs_output_root = os.path.abspath(output_root)
+                # Формируем список опций для Nuitka
+                if sys.platform == 'win32':
+                    nuitka_options = [
+                        '--standalone',
+                        f'--include-plugin-directory={abs_output_root}',
+                        f'--output-dir={abs_nuitka_out}',
+                        abs_entry
+                    ]
+                else:
+                    nuitka_options = [
+                        '--standalone',
+                        f'--include-plugin-directory={abs_output_root}',
+                        f'--output-dir={abs_nuitka_out}',
+                        f'--output-filename={os.path.splitext(os.path.basename(source_dark_file))[0]}',
+                        abs_entry
+                    ]
+
+                print(f"Запуск Nuitka: nuitka {' '.join(nuitka_options)}", flush=True)
+
+                def find_true_python_executable():
+                    """
+                    Находит настоящий системный python.exe, избегая самого себя (frozen .exe).
+                    Это необходимо для запуска Nuitka в чистом, изолированном процессе,
+                    независимо от того, запущен ли dark_start.exe как скрипт или как .exe.
+                    """
+                    current_exe_path = os.path.dirname(os.path.abspath(sys.executable))
+                    python_names = ['python.exe', 'python3.exe', 'python', 'python3']
+
+                    for path in os.environ.get('PATH', '').split(os.pathsep):
+                        # Пропускаем каталог, в котором находится наш frozen .exe
+                        if os.path.normcase(path) == os.path.normcase(current_exe_path):
+                            continue
+                        for name in python_names:
+                            exe_path = os.path.join(path, name)
+                            if os.path.isfile(exe_path) and os.access(exe_path, os.X_OK):
+                                return exe_path
+                    # В крайнем случае, если не нашли ничего лучше
+                    return shutil.which('python') or shutil.which('python3')
+
+                python_for_nuitka = find_true_python_executable()
+
+                if not python_for_nuitka:
+                    print("Критическая ошибка: Не удалось найти 'python' или 'python3' в системной переменной PATH.", file=sys.stderr)
+                    print("Nuitka требует наличия Python для своей работы.", file=sys.stderr)
+                    return False
+
+                import subprocess
+                
+                # Запускаем Nuitka как полностью отдельный процесс через системный Python.
+                # Это самый надежный способ, который гарантирует, что Nuitka будет работать
+                # в чистом окружении.
+                command = [python_for_nuitka, '-m', 'nuitka'] + nuitka_options
+
+                # Первая попытка запуска Nuitka
+                try:
+                    # Используем capture_output, чтобы проверить stderr в случае ошибки
+                    subprocess.run(command, check=True, capture_output=True, text=True, encoding='utf-8')
+                except subprocess.CalledProcessError as e:
+                    # Проверяем, вызвана ли ошибка отсутствием Nuitka
+                    if "No module named nuitka" in e.stderr:
+                        print("\nМодуль Nuitka не найден. Попытка автоматической установки...", flush=True)
+                        install_command = [python_for_nuitka, '-m', 'pip', 'install', 'nuitka']
+                        try:
+                            subprocess.run(install_command, check=True, capture_output=True, text=True, encoding='utf-8')
+                            print("Nuitka успешно установлена.", flush=True)
+                            
+                            # Вторая попытка запуска Nuitka после установки
+                            print("Повторный запуск Nuitka...", flush=True)
+                            subprocess.run(command, check=True)
+                        except (subprocess.CalledProcessError, FileNotFoundError) as install_error:
+                            print(f"Ошибка при установке или повторном запуске Nuitka: {install_error}", file=sys.stderr)
+                            if isinstance(install_error, subprocess.CalledProcessError):
+                                print(f"Вывод ошибки: {install_error.stderr}", file=sys.stderr)
+                            return False
+                    else:
+                        print(f"Ошибка при запуске Nuitka: {e.stderr}", file=sys.stderr)
+                        return False
+
+                print(f"Nuitka сборка завершена: {os.path.abspath(nuitka_out)}")
 
             return True
         except Exception as e:
-            print(f"Ошибка при создании сборки: {e}", file=sys.stderr)
+            print(f"\nОшибка при создании сборки: {e}", file=sys.stderr)
             return False
     else:
         return dark_code

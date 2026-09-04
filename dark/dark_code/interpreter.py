@@ -1,3 +1,16 @@
+# Copyright 2026 Dark.Tehno
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import os
 import sys
 import requests
@@ -116,6 +129,57 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
             return str(val) 
         return str(val)
 
+    def _interpolate_string(raw, current_env, line):
+        """Подставляет в строку-бэктик значения выражений из '{...}'.
+        '{{' и '}}' — экранированные литеральные скобки."""
+        out = []
+        i, n = 0, len(raw)
+        while i < n:
+            ch = raw[i]
+            if ch == '{' and i + 1 < n and raw[i + 1] == '{':
+                out.append('{'); i += 2; continue
+            if ch == '}' and i + 1 < n and raw[i + 1] == '}':
+                out.append('}'); i += 2; continue
+            if ch == '{':
+                depth = 1
+                j = i + 1
+                in_quote = None
+                while j < n and depth > 0:
+                    c = raw[j]
+                    if in_quote:
+                        if c == '\\' and j + 1 < n:
+                            j += 2
+                            continue
+                        if c == in_quote:
+                            in_quote = None
+                    elif c in ('"', "'"):
+                        in_quote = c
+                    elif c == '{':
+                        depth += 1
+                    elif c == '}':
+                        depth -= 1
+                        if depth == 0:
+                            break
+                    j += 1
+                if depth != 0:
+                    raise DarkRuntimeError("незакрытая '{' в строке с подстановкой", line=line)
+                expr_text = raw[i + 1:j]
+                if not expr_text.strip():
+                    raise DarkRuntimeError("пустые фигурные скобки '{}' в строке с подстановкой", line=line)
+                try:
+                    expr_ast = Parser(lex(expr_text)).expr()
+                except DarkError as e:
+                    raise DarkRuntimeError(f"неверное выражение в подстановке '{{{expr_text}}}': {e}", line=line)
+                value = eval_expr(expr_ast, current_env)
+                out.append(_dark_obj_to_str(value, current_env))
+                i = j + 1
+                continue
+            if ch == '}':
+                raise DarkRuntimeError("одиночная '}' без пары в строке с подстановкой", line=line)
+            out.append(ch)
+            i += 1
+        return ''.join(out)
+
     def is_truthy(val):
         return not (val is False or val == 0 or val == "" or (isinstance(val, (list, dict)) and not val)) 
 
@@ -204,7 +268,10 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
         if t in ('num', 'float'):
             return node[1]
         if t == 'str':
-            return node[1]
+            val, quote, str_line = node[1], node[2], node[3]
+            if quote == '`' and '{' in val:
+                return _interpolate_string(val, current_env, str_line)
+            return val
         if t == 'list':
             return [eval_expr(elem, current_env) for elem in node[1]]
         if t == 'dict':

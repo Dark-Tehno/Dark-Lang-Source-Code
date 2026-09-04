@@ -1,3 +1,16 @@
+# Copyright 2026 Dark.Tehno
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 import sys
 import io
 import os
@@ -7,6 +20,7 @@ import re
 import requests
 import configparser
 import DarkCustom
+import nuitka
 
 
 try:
@@ -339,6 +353,8 @@ def main():
 
     mode = 'run'
     file_arg_index = 1
+    print(mode)
+    print(sys.argv)
 
     if sys.argv[1].startswith('--'):
         if sys.argv[1] == '--check':
@@ -391,8 +407,7 @@ def main():
             sys.exit(0)
         else:
             print(f"Неизвестный флаг: {sys.argv[1]}", file=sys.stderr)
-            sys.exit(1)
-
+            sys.exit(1)   
     if len(sys.argv) <= file_arg_index:
         default_script = os.path.join(base_dir, "script.dark")
         if os.path.exists(default_script):
@@ -438,6 +453,7 @@ def main():
         if not start_compilation(file_to_process, os.getcwd(), out_dir=out_dir, nuitka=nuitka_flag, nuitka_args=nuitka_args):
             print("Компиляция завершилась с ошибкой.", file=sys.stderr)
             sys.exit(1)
+        sys.exit(0)
     elif mode == 'denv':
         create_denv(file_to_process)
     elif mode == 'parser':
@@ -455,7 +471,8 @@ def main():
         for token in processed_tokens:
             print(token)
     else:
-        run_script(file_to_process)
+        if mode == 'run':
+            run_script(file_to_process)
 
 if __name__ == "__main__":
     main()

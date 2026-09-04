@@ -17,3 +17,4 @@ build-linux
 build
 Release.md
 UPDATE.md
+remove_comments.py
