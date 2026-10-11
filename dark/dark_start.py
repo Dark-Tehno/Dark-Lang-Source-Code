@@ -353,8 +353,6 @@ def main():
 
     mode = 'run'
     file_arg_index = 1
-    print(mode)
-    print(sys.argv)
 
     if sys.argv[1].startswith('--'):
         if sys.argv[1] == '--check':
