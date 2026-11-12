@@ -13,6 +13,7 @@
 # limitations under the License.
 import os
 import sys
+import inspect
 import requests
 from dark_code.native_modules import NATIVE_MODULES
 from dark_code.dark_exceptions import DarkRuntimeError, DarkError
@@ -558,7 +559,14 @@ def run(ast, env=None, source_name='<string>', script_dir=None, imported_files=N
                         py_module = __import__(py_module_info['name'])
                         
                         if hasattr(py_module, 'get_module') and callable(py_module.get_module):
-                            modules[module_name] = py_module.get_module(use_tkinter=use_tkinter)
+                            get_module_parameters = inspect.signature(py_module.get_module).parameters
+                            get_module_kwargs = {'use_tkinter': use_tkinter}
+                            if 'call_dark_function' in get_module_parameters or any(
+                                parameter.kind == inspect.Parameter.VAR_KEYWORD
+                                for parameter in get_module_parameters.values()
+                            ):
+                                get_module_kwargs['call_dark_function'] = call_dark_function
+                            modules[module_name] = py_module.get_module(**get_module_kwargs)
                             return
                         else:
                             if os.path.isdir(os.path.join(ext_dir, module_name)):

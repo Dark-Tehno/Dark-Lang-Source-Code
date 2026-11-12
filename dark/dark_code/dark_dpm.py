@@ -37,6 +37,14 @@ class DarkPackageManager:
         self.extensions_dir = os.path.join(self.denv_path, 'dark_extensions')
         self.args = args
 
+    def _install_from_file(self, path):
+        """Устанавливает все пакеты, перечисленные в файле зависимостей."""
+        with open(path, 'r', encoding='utf-8') as f:
+            for line in f:
+                package_name = line.strip()
+                if package_name and not package_name.startswith('#'):
+                    self.install_package(package_name)
+
     def run(self):
         """Запускает выполнение команды."""
         if not self.args or self.args[0] in ('--help', 'help'):
@@ -49,26 +57,21 @@ class DarkPackageManager:
         if command == 'install':
             if not command_args:
                 if os.path.exists('requirements.txt'):
-                    with open('requirements.txt', 'r') as f:
-                        for line in f:
-                            package_name = line.strip()
-                            if package_name:
-                                self.install_package(package_name)
+                    self._install_from_file('requirements.txt')
                 else:
                     print("Ошибка: файл 'requirements.txt' не найден.")
                     self.show_help()
                     sys.exit(1)
             else:
-                if os.path.exists(command_args):
-                    with open(command_args, 'r') as f:
-                        for line in f:
-                            package_name = line.strip()
-                            if package_name:
-                                self.install_package(package_name)
-                else:
-                    print(f"Ошибка: файл '{command_args}' не найден.")
-            for package_name in command_args:
-                self.install_package(package_name)
+                for arg in command_args:
+                    # Аргумент вида "something.txt" — файл зависимостей,
+                    # всё остальное — имя пакета.
+                    if arg.lower().endswith('.txt') and os.path.isfile(arg):
+                        self._install_from_file(arg)
+                    elif arg.lower().endswith('.txt'):
+                        print(f"Ошибка: файл '{arg}' не найден.")
+                    else:
+                        self.install_package(arg)
         elif command == 'uninstall':
             if not command_args:
                 print("Ошибка: команда 'uninstall' требует имя пакета.")
@@ -267,6 +270,7 @@ class DarkPackageManager:
 Команды:
   install <имя_пакета>...       Установить один или несколько пакетов из GitHub.
                                  Ищет репозитории с именем 'Dark_<имя_пакета>'.
+                                 Можно передать и файл зависимостей: install deps.txt
   uninstall <имя_пакета>...     Удалить один или несколько установленных пакетов.
   list                          Показать список всех установленных пакетов.
   help                          Показать это сообщение.
